@@ -6,6 +6,7 @@ import { useElementSize } from '../../hooks/useAtlas';
 import { VIEWPORT_HEIGHT } from '../../data/layouts';
 import { formatDate, formatSize, hostOf, LANG_SHORT, splitTitle } from '../../data/repos';
 import { GithubMark } from '../ui/controls';
+import { NativeWorkspace } from './NativeWorkspace';
 import { cn } from '../../utils/cn';
 
 export interface FragmentViewProps {
@@ -20,6 +21,7 @@ export interface FragmentViewProps {
 }
 
 export function FragmentView(props: FragmentViewProps) {
+  if (props.fragment.nativeModule === 'tasks-budget') return <NativeWorkspace key={props.fragment.id} id={props.fragment.id} interactive={props.interactive} />;
   switch (props.fragment.kind) {
     case 'site':
       return <SiteView {...props} />;
