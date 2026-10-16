@@ -59,6 +59,7 @@ export interface Fragment {
   badge?: string;
   starred?: boolean;
   text?: TextContent;
+  nativeModule?: 'tasks-budget';
 }
 
 export type LayoutId =

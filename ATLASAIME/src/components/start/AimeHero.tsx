@@ -9,6 +9,7 @@ import type { GeneratedSite } from '../../data/siteGenerator';
 import { cn } from '../../utils/cn';
 
 const SUGGESTIONS = [
+  'Une application pour mes clients avec tâches et budget, web, style sobre, privée.',
   'Un site pour des couples qui organise le mariage, avec RSVP et playlist, mobile, style rose, public.',
   'Une application pour mes clients qui suit leurs projets de broderie, mobile et bureau, style sobre, privée.',
   'Un portfolio web pour les visiteurs avec mes projets de musique, style sombre, public.',
@@ -199,13 +200,17 @@ export function AimeHero({ repos, onCreate, onExplore }: { repos: RepoSnapshot[]
                         ))}
                       </div>
                     )}
+                    <label className="mt-4 flex items-start gap-2 text-[12px]">
+                      <input type="checkbox" checked={answers.fusion === 'tasks-budget'} disabled={!!generated} onChange={(e) => setAnswers((current) => ({ ...current, fusion: e.target.checked ? 'tasks-budget' : '' }))} />
+                      Fusion native pilote : Tâches + Budget, dans un seul espace fonctionnel. Sans import du code des dépôts ni serveur.
+                    </label>
                     {generated && (
                       <div className="mt-4 rounded-xl bg-white/10 p-3">
                         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/65">Le site préparé correspond à votre intention</div>
                         <div className="mt-2 flex flex-wrap gap-1.5">{generated.sections.map((section) => <span key={section} className="rounded-full border border-white/25 px-2 py-1 text-[10px]">{section}</span>)}</div>
-                        <p className="mt-2 text-[11px] text-white/75">{generated.sourcesUsed.length} vrai{generated.sourcesUsed.length > 1 ? 's' : ''} projet{generated.sourcesUsed.length > 1 ? 's' : ''} réutilisé{generated.sourcesUsed.length > 1 ? 's' : ''} · {generated.project.cells.length} blocs · {generated.project.supportId} · {generated.project.layoutId}</p>
+                        <p className="mt-2 text-[11px] text-white/75">{generated.sourcesUsed.length} projet{generated.sourcesUsed.length > 1 ? 's' : ''} de référence · {generated.project.cells.length} blocs · {generated.project.supportId} · {generated.project.layoutId}</p>
                         {generated.assumptions.filter((a) => a.includes('hypothèse')).length > 0 && <p className="mt-2 text-[11px] text-white/75">À valider : {generated.assumptions.filter((a) => a.includes('hypothèse')).join(' · ')}</p>}
-                        <p className="mt-2 text-[10px] leading-relaxed text-white/55">Prototype visuel local · le backend, les comptes, paiements et formulaires réels restent à connecter.</p>
+                        <p className="mt-2 text-[10px] leading-relaxed text-white/55">{answers.fusion === 'tasks-budget' ? 'Modules Tâches + Budget fonctionnels, données locales uniquement' : 'Prototype visuel local'} · le backend, les comptes, paiements et formulaires réels restent à connecter.</p>
                       </div>
                     )}
                     {phase >= steps.length && (

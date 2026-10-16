@@ -91,6 +91,7 @@ function generatedSections(brief: Brief): TextContent[] {
 }
 
 export function generateSiteFromBrief(brief: Brief, answers: Record<string, string>, repos: RepoSnapshot[]): GeneratedSite {
+  const nativeFusion = answers.fusion === 'tasks-budget';
   const typeId = brief.typeId;
   const layout = LAYOUT_MAP[brief.layoutId];
   const audience = answers.audience?.trim();
@@ -132,7 +133,14 @@ export function generateSiteFromBrief(brief: Brief, answers: Record<string, stri
     : resolvedBrief.visualDirection === 'fuchsia' ? 'fuchsia'
       : resolvedBrief.visualDirection === 'rose' ? 'rose'
         : resolvedBrief.visualDirection === 'editorial' ? 'editorial' : 'original';
-  const referenceCells = project.cells.filter((cell) => cell.fragmentId);
+  const referenceCells = nativeFusion ? [] : project.cells.filter((cell) => cell.fragmentId);
+  if (nativeFusion) {
+    const workspace = makeTextFragment({ title: 'Tâches et budget' });
+    workspace.nativeModule = 'tasks-budget';
+    project.customFragments.push(workspace);
+    project.layoutId = 'editorial';
+    sectionFragments.splice(1, 0, workspace);
+  }
   const sectionCells = sectionFragments.map((f): Cell => ({
     id: uid('cell'),
     fragmentId: f.id,
@@ -156,14 +164,15 @@ export function generateSiteFromBrief(brief: Brief, answers: Record<string, stri
   const assumptions = [
     ...brief.missing.map((m) => `${m.label} : ${answers[m.id]?.trim() || 'hypothèse à valider'}`),
     `Portée : ${resolvedBrief.requestedScope}`,
-    `Source(s) intégrée(s) : ${sourceIds.length ? sourceIds.map((id) => id.slice(3)).join(', ') : 'aucun dépôt public correspondant'}`,
+    `Dépôts de référence (code non importé) : ${sourceIds.length ? sourceIds.map((id) => id.slice(3)).join(', ') : 'aucun dépôt public correspondant'}`,
+    ...(nativeFusion ? ['Fusion native Tâches + Budget : données locales communes ; aucun code importé des dépôts de référence.'] : []),
     'Prototype de composition : aucun backend, compte utilisateur, paiement, formulaire connecté ou publication automatique.',
   ];
 
   return {
     project,
     assumptions,
-    sourcesUsed: sourceIds,
+    sourcesUsed: nativeFusion ? [] : sourceIds,
     sections: sectionFragments.map((f) => f.text?.eyebrow ?? f.name),
   };
 }

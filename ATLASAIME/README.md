@@ -67,3 +67,27 @@ Aucune variable d'environnement n'est requise. `vercel.json` ajoute des en-tête
 ## Accès Git et déploiement
 
 Dans l'environnement de réalisation, le dossier n'avait pas de répertoire `.git`, de remote GitHub, de configuration Vercel ou de jeton de publication. Les fichiers et vérifications sont préparés, mais aucun push vers votre compte ni déploiement Vercel ne peut être effectué sans ces accès. Le guide ci-dessus permet de les connecter sans intégrer de secret au code.
+
+## Fusion native pilote : Tâches + Budget
+
+Dans le hero, décrivez votre projet, préparez la composition puis cochez
+**Fusion native pilote : Tâches + Budget** avant de générer. Ouvrez le site
+sur le canevas et passez en mode **Utiliser**. Ce pilote remplace les cellules
+GitHub par un espace natif : ajouter une tâche et son coût alimente le budget ;
+la terminer met à jour le montant terminé, la supprimer libère le budget.
+Les modules partagent un seul modèle en centimes, sans iframe ni service externe.
+Il s'agit de modules ATLAS, pas de code extrait ou fusionné des dépôts GitHub.
+
+Les données métier sont enregistrées séparément dans le navigateur, par fragment.
+Elles ne sont ni synchronisées ni incluses dans les liens de partage des compositions.
+Le bouton d'export JSON permet une sauvegarde manuelle (pas encore de réimport).
+Aucun backend, déploiement autonome du site produit, modèle IA distant ou réparation
+automatique de dépôt n'est ajouté par ce pilote. Les estimations restent des coûts
+de reconstruction, pas des prix de vente.
+
+Vérification automatisée : `node --test tests/*.test.mjs`.
+Recette navigateur : générer avec la case cochée, ouvrir en mode Utiliser, fixer
+100 € de budget, ajouter une tâche à 30,50 €, vérifier 69,50 € disponibles,
+la terminer (30,50 € terminés), recharger (données conservées), puis la supprimer
+(100 € disponibles). Vérifier aussi le mode édition désactivé, l'export JSON et
+une génération sans la case (parcours visuel existant conservé).
