@@ -91,3 +91,49 @@ Recette navigateur : générer avec la case cochée, ouvrir en mode Utiliser, fi
 la terminer (30,50 € terminés), recharger (données conservées), puis la supprimer
 (100 € disponibles). Vérifier aussi le mode édition désactivé, l'export JSON et
 une génération sans la case (parcours visuel existant conservé).
+
+## Suivi des demandes et scénario commercial
+
+Les actions Continuer, Réparer et Finaliser créent désormais un suivi local par
+projet, en plus de la consigne à copier : préparée, en cours (déclaré), à vérifier,
+validée par le propriétaire. Une URL HTTPS sans identifiants est exigée pour
+la validation. Le lien n'est pas audité automatiquement ; modifier la preuve
+réinitialise la validation. Les 100 demandes les plus récentes sont conservées.
+Ces états ne prouvent pas qu'un agent a exécuté ou testé une réparation.
+
+Le scénario commercial est distinct du coût de reconstruction : revenus annuels
+transférables × multiples choisis par le propriétaire. Le formulaire exige revenus
+positifs, hypothèses, source HTTPS et déclaration sur les droits de cession.
+Aucun multiple de marché n'est fourni, aucune source n'est vérifiée automatiquement,
+et aucune valorisation n'est affichée en l'absence des informations requises.
+Ne saisissez pas de secrets ni de documents privés dans ces champs locaux.
+
+## Export autonome
+
+Un brief contenant « tâches » ou « budget » présélectionne le pilote natif,
+modifiable avant génération. Après génération, **Télécharger le site autonome
+(.html)** produit une page indépendante avec les sections du brief et le module
+Tâches + Budget. Pas d'iframe, pas de dépendance réseau. Les textes sont échappés.
+Les données métier de la session ATLAS ne sont pas exportées dans le HTML :
+l'application exportée démarre vide et possède son propre stockage local.
+La sauvegarde locale dépend des permissions du navigateur, notamment pour un
+fichier ouvert en `file:` ; l'export JSON permet une sauvegarde explicite.
+Ce téléchargement n'est pas un déploiement automatique sur un domaine.
+
+## Connexions encore nécessaires
+
+Le projet reste statique : pas d'identité utilisateur, API d'exécution, GitHub App
+serveur ni modèle IA distant configuré. L'accès GitHub/Vercel de l'assistant pendant
+une session n'est pas transmis à l'application. Pour exécuter les réparations depuis
+l'interface et générer du code arbitraire, il faut concevoir un service authentifié :
+permissions par dépôt, GitHub App à privilèges minimaux, exécution isolée, budgets,
+validation des diffs, tests et déploiements soumis à approbation. Aucun token ne
+doit être intégré au frontend ou à une variable `VITE_*`.
+
+Vérifications supplémentaires : `node --test tests/*.test.mjs` couvre suivi,
+preuves, scénarios commerciaux, échappement/export et modèle tâches/budget.
+Une recette DOM simulée a également vérifié ajout, terminaison, suppression,
+restauration des tâches et budget, refus de validation sans preuve, absence de
+prix commercial sans données, et interactions dans le HTML exporté.
+La vérification visuelle dans un vrai navigateur et les appels aux domaines
+Vercel déployés ne sont pas effectués depuis le sandbox.

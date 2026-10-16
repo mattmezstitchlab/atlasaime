@@ -1,3 +1,6 @@
+import { ProjectWork } from './ProjectWork';
+import { SaleEstimate } from './SaleEstimate';
+import { loadWork, WORK_KEY } from '../../data/projectWork';
 import { useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, ExternalLink, Info, Play, Wrench, BadgeCheck, Check } from 'lucide-react';
 import type { RepoSnapshot } from '../../data/repos';
@@ -84,6 +87,8 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
   const [selected, setSelected] = useState<string | null>(null);
   const [doneMap, setDoneMap] = useState<Record<string, string[]>>(() => loadDone());
   const [finalizing, setFinalizing] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [workError, setWorkError] = useState('');
   const [signal, setSignal] = useState<Signal | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const active = entries.find((r) => r.name === selected) ?? entries[0];
@@ -108,7 +113,12 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
 
   const emit = (kind: 'continuer' | 'reparer' | 'finaliser') => {
     if (!active || !valuation) return;
-    setSignal(composeProjectSignal(kind, active, { remaining, broken, source: work ? `${work.sourceLabel} (${work.source})` : undefined, completion: valuation.completion, done, low: valuation.low, high: valuation.high }));
+    const request = composeProjectSignal(kind, active, { remaining, broken, source: work ? `${work.sourceLabel} (${work.source})` : undefined, completion: valuation.completion, done, low: valuation.low, high: valuation.high });
+    try {
+      localStorage.setItem(WORK_KEY, JSON.stringify([{ ...request, status: 'prepared', evidence: '', updatedAt: Date.now() }, ...loadWork()].slice(0, 100)));
+      setRevision((v) => v + 1); setWorkError('');
+    } catch { setWorkError('Demande non enregistrée : stockage indisponible. Vous pouvez toujours copier la consigne.'); }
+    setSignal(request);
   };
 
   return (
@@ -208,16 +218,19 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
                 </ul>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                   <span className="font-mono text-[11px] text-gray-500">Nouvelle estimation : {valuation.completion} % · {euro(valuation.low)} – {euro(valuation.high)}</span>
-                  <button type="button" onClick={() => emit('finaliser')} className="rounded-xl bg-[#161616] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#e6007e]">Envoyer le signal de finalisation</button>
+                  <button type="button" onClick={() => emit('finaliser')} className="rounded-xl bg-[#161616] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#e6007e]">Préparer la demande de finalisation</button>
                 </div>
               </div>
             )}
+            {workError && <p role="alert" className="mt-2 text-xs text-red-700">{workError}</p>}
+            <ProjectWork subject={active.name} revision={revision} />
           </div>
 
           <div className="border-t border-gray-100 bg-[#faf9f8] p-5 lg:border-l lg:border-t-0">
             <div className="flex items-center justify-between text-[12px]"><span className="font-medium">Avancement documentaire</span><span className="font-mono">{valuation.completion} %</span></div>
             <div className="mt-2 h-1 overflow-hidden rounded-full bg-gray-200"><div className="h-full rounded-full bg-[#e6007e] transition-all duration-500" style={{ width: `${valuation.completion}%` }} /></div>
             {done.length > 0 && <p className="mt-1.5 font-mono text-[10px] text-gray-400">{done.length}/{valuation.gates.length} condition(s) déclarée(s) remplie(s) · à vérifier</p>}
+            <SaleEstimate key={active.name} subject={active.name} />
             <div className="mt-5 font-mono text-[10px] uppercase tracking-wider text-gray-400">Coût de reconstruction · indicatif</div>
             <div className="mt-1 text-xl font-semibold">{euro(valuation.low)} – {euro(valuation.high)}</div>
             <div className="mt-3 text-[12px] text-gray-600">Scénario après validation complète : <strong>jusqu’à {euro(valuation.future)}</strong></div>
