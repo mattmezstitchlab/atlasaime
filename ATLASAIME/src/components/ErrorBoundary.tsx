@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div role="alert" className="flex min-h-screen items-center justify-center bg-[#f5f5f7] p-6 text-gray-900">
         <div className="w-full max-w-xl rounded-3xl border border-gray-200 bg-white p-7 shadow-[0_24px_80px_-30px_rgba(0,0,0,.25)]">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#b1005f]">Interruption interceptée</div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#0066cc]">Interruption interceptée</div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">Quelque chose s’est arrêté, pas vos projets.</h1>
           <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
             Vos compositions sont sauvegardées localement. L’erreur ci-dessous est conservée dans le navigateur pour pouvoir être corrigée. Vous pouvez reprendre sans recharger la page.

@@ -6,8 +6,8 @@ import { cn } from '../../utils/cn';
 const VARIANTS = [
   { id: 'original', name: 'Original', desc: 'Source intacte', bg: 'bg-white' },
   { id: 'mono', name: 'Monochrome', desc: 'Gris & contraste', bg: 'bg-gray-300' },
-  { id: 'rose', name: 'Rose poudré', desc: 'Teinte douce', bg: 'bg-[#f4c8dc]' },
-  { id: 'fuchsia', name: 'Fuchsia', desc: 'Accent AIME', bg: 'bg-[#e6007e]' },
+  { id: 'rose', name: 'Azur', desc: 'Teinte douce', bg: 'bg-[#d6e6ff]' },
+  { id: 'fuchsia', name: 'Bleu', desc: 'Accent net', bg: 'bg-[#0071e3]' },
   { id: 'editorial', name: 'Éditorial', desc: 'Nuance & netteté', bg: 'bg-[#b4b2a9]' },
   { id: 'noir', name: 'Nuit', desc: 'Contraste sombre', bg: 'bg-gray-950' },
 ] as const;

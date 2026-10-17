@@ -104,7 +104,7 @@ export function Segmented<T extends string | number>({
           onClick={() => onChange(o.value)}
           className={cn(
             'flex items-center justify-center gap-1 truncate rounded-md px-1.5 py-1 text-[11px] font-medium transition-colors',
-            o.value === value ? 'bg-black text-white shadow-sm' : 'text-gray-600 hover:bg-white/80 hover:text-black',
+            o.value === value ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:bg-white/70 hover:text-black',
           )}
         >
           {o.label}

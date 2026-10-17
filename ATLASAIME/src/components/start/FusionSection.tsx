@@ -62,7 +62,7 @@ export function FusionSection({ repos, onCreate }: { repos: RepoSnapshot[]; onCr
                     </span>
                     <span className="mt-1.5 block text-[17px] font-semibold tracking-tight">{f.name}</span>
                     <span className="mt-1 block text-[12px] leading-relaxed text-gray-500">{f.thesis}</span>
-                    <span className="mt-3 block h-1 overflow-hidden rounded-full bg-gray-100"><span className="block h-full rounded-full bg-[#e6007e]" style={{ width: `${readiness.score}%` }} /></span>
+                    <span className="mt-3 block h-1 overflow-hidden rounded-full bg-gray-100"><span className="block h-full rounded-full bg-[#0071e3]" style={{ width: `${readiness.score}%` }} /></span>
                   </span>
                 </button>
 
@@ -95,7 +95,7 @@ export function FusionSection({ repos, onCreate }: { repos: RepoSnapshot[]; onCr
                     </div>
                     <a href={`${githubRepoUrl(f.source.repo)}/blob/main/${f.source.path}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 font-mono text-[10px] text-gray-500 hover:text-black">Source : {f.source.repo}/{f.source.path} · {f.source.label} <ExternalLink className="h-3 w-3" /></a>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button type="button" onClick={() => setSignal(composeFusionSignal(f, readiness, repos))} className="flex items-center gap-2 rounded-xl bg-[#161616] px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#e6007e]"><GitMerge className="h-3.5 w-3.5" /> Préparer la fusion avec l’IA <ArrowRight className="h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => setSignal(composeFusionSignal(f, readiness, repos))} className="flex items-center gap-2 rounded-xl bg-[#161616] px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#0071e3]"><GitMerge className="h-3.5 w-3.5" /> Préparer la fusion avec l’IA <ArrowRight className="h-3.5 w-3.5" /></button>
                       <button type="button" onClick={() => compose(f.members, f.name)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[12px] font-semibold text-gray-700 hover:bg-gray-50"><LayoutGrid className="h-3.5 w-3.5" /> Voir les membres côte à côte</button>
                     </div>
                   </div>

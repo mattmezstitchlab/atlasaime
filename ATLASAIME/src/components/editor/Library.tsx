@@ -8,7 +8,7 @@ import { FRAG_MIME } from './Artboard';
 import { GithubMark, KindIcon } from '../ui/controls';
 import { cn } from '../../utils/cn';
 
-type Filter = 'tous' | 'sites' | 'code' | 'medias' | 'star';
+type Filter = 'tous' | 'sites' | 'code' | 'assets' | 'audio' | 'video' | 'docs' | 'star';
 
 export interface LibraryProps {
   repos: RepoSnapshot[];
@@ -109,10 +109,15 @@ export function Library(p: LibraryProps) {
     !q || [f.name, f.subtitle, f.headline, f.description].some((s) => s && s.toLowerCase().includes(q));
   const byFilter = (f: Fragment) => {
     if (filter === 'tous') return true;
-    if (filter === 'sites') return f.kind === 'site';
-    if (filter === 'code') return f.kind === 'repo' || f.kind === 'code';
-    if (filter === 'medias') return ['image', 'video', 'audio', 'svg', 'model3d', 'pdf'].includes(f.kind);
-    return !!f.starred || p.usedIds.has(f.id);
+    if (filter === 'star') return !!f.starred || p.usedIds.has(f.id);
+    const k = f.kind;
+    if (filter === 'sites') return k === 'site';
+    if (filter === 'code') return k === 'repo' || k === 'code';
+    if (filter === 'assets') return ['image', 'svg', 'video', 'audio', 'model3d', 'pdf', 'calendar', 'timeline'].includes(k);
+    if (filter === 'audio') return k === 'audio';
+    if (filter === 'video') return k === 'video';
+    if (filter === 'docs') return k === 'pdf' || k === 'text';
+    return true;
   };
 
   const media = p.mediaFragments.filter((f) => match(f) && byFilter(f) && !collection);
@@ -145,7 +150,10 @@ export function Library(p: LibraryProps) {
               ['tous', 'Tous'],
               ['sites', 'Sites'],
               ['code', 'Code'],
-              ['medias', 'Médias'],
+              ['assets', 'Assets'],
+              ['audio', 'Audio'],
+              ['video', 'Vidéo'],
+              ['docs', 'Docs'],
               ['star', ''],
             ] as [Filter, string][]
           ).map(([id, label]) => (
