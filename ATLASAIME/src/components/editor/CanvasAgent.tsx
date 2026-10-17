@@ -102,7 +102,7 @@ export function CanvasAgent({
           {showTeam && (
             <div className="grid grid-cols-2 gap-1.5 border-b border-gray-100 bg-[#fafafa] p-3">
               {AGENTS.filter((a) => ['ux-architect', 'art-director', 'principal-developer', 'composer', 'noema'].includes(a.id)).map((agent) => (
-                <span key={agent.id} title={`${agent.repo}/${agent.source}`} className="flex min-w-0 items-center gap-1.5 rounded-lg bg-white px-2 py-1.5 ring-1 ring-gray-100"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#e6007e]" /><span className="truncate text-[10px] font-medium text-gray-700">{agent.name}</span></span>
+                <span key={agent.id} title={`${agent.repo}/${agent.source}`} className="flex min-w-0 items-center gap-1.5 rounded-lg bg-white px-2 py-1.5 ring-1 ring-gray-100"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#0071e3]" /><span className="truncate text-[10px] font-medium text-gray-700">{agent.name}</span></span>
               ))}
             </div>
           )}
@@ -116,17 +116,17 @@ export function CanvasAgent({
                   {message.reply?.applied?.length ? <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">{message.reply.applied.map((operation, i) => <div key={i} className="flex items-start gap-1.5 text-[10px] text-gray-500"><span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-emerald-500" />{operation}</div>)}</div> : null}
                   {message.reply?.assumptions?.length ? <div className="mt-2 rounded-lg bg-[#fff7e6] p-2 text-[10px] text-[#815b11]">À valider : {message.reply.assumptions.join(' · ')}</div> : null}
                   {message.reply?.agents?.length ? <div className="mt-2 flex flex-wrap gap-1">{message.reply.agents.map((a) => <span key={a.id} title={`${a.repo}/${a.source}`} className="rounded-full border border-gray-200 px-1.5 py-0.5 text-[9px] text-gray-500">{a.name}</span>)}</div> : null}
-                  {message.reply?.reactions?.length ? <div className="mt-2.5 space-y-1.5 border-t border-gray-100 pt-2.5">{message.reply.reactions.map(({ agent, text }) => <div key={agent.id} className="text-[10px] leading-relaxed text-gray-500"><span className="font-semibold text-gray-700">{agent.name}</span> · {text}<a href={`https://github.com/mattmezstitchlab/${agent.repo}/blob/main/${agent.source}`} target="_blank" rel="noreferrer" className="ml-1 text-[#b1005f] hover:underline">preuve ↗</a></div>)}</div> : null}
-                  {message.reply?.action && <button type="button" onClick={() => { message.reply?.action?.run(); setMessages((all) => all.map((m) => m.id === message.id ? { ...m, text: 'Composition appliquée au canevas. Vous pouvez annuler avec ⌘Z.', reply: { ...m.reply!, action: undefined, applied: [...(m.reply?.applied ?? []), 'Nouveau site appliqué · historique réversible'] } } : m)); }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#161616] px-3 py-2 text-[11px] font-semibold text-white hover:bg-[#e6007e]">{message.reply.action.label}<ArrowUp className="h-3 w-3 rotate-45" /></button>}
+                  {message.reply?.reactions?.length ? <div className="mt-2.5 space-y-1.5 border-t border-gray-100 pt-2.5">{message.reply.reactions.map(({ agent, text }) => <div key={agent.id} className="text-[10px] leading-relaxed text-gray-500"><span className="font-semibold text-gray-700">{agent.name}</span> · {text}<a href={`https://github.com/mattmezstitchlab/${agent.repo}/blob/main/${agent.source}`} target="_blank" rel="noreferrer" className="ml-1 text-[#0066cc] hover:underline">preuve ↗</a></div>)}</div> : null}
+                  {message.reply?.action && <button type="button" onClick={() => { message.reply?.action?.run(); setMessages((all) => all.map((m) => m.id === message.id ? { ...m, text: 'Composition appliquée au canevas. Vous pouvez annuler avec ⌘Z.', reply: { ...m.reply!, action: undefined, applied: [...(m.reply?.applied ?? []), 'Nouveau site appliqué · historique réversible'] } } : m)); }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#161616] px-3 py-2 text-[11px] font-semibold text-white hover:bg-[#0071e3]">{message.reply.action.label}<ArrowUp className="h-3 w-3 rotate-45" /></button>}
                 </div>
               </div>
             ))}
-            {busy && <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-2 text-[11px] text-gray-500"><span className="flex gap-0.5"><i className="h-1 w-1 animate-pulse rounded-full bg-[#e6007e]"/><i className="h-1 w-1 animate-pulse rounded-full bg-[#e6007e] [animation-delay:120ms]"/><i className="h-1 w-1 animate-pulse rounded-full bg-[#e6007e] [animation-delay:240ms]"/></span>Les spécialités concernées examinent la consigne…</div>}
+            {busy && <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-2 text-[11px] text-gray-500"><span className="flex gap-0.5"><i className="h-1 w-1 animate-pulse rounded-full bg-[#0071e3]"/><i className="h-1 w-1 animate-pulse rounded-full bg-[#0071e3] [animation-delay:120ms]"/><i className="h-1 w-1 animate-pulse rounded-full bg-[#0071e3] [animation-delay:240ms]"/></span>Les spécialités concernées examinent la consigne…</div>}
           </div>
 
           {messages.length < 3 && (
             <div className="no-scrollbar flex gap-1.5 overflow-x-auto border-t border-gray-100 bg-white px-3 py-2">
-              {SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => void send(suggestion)} className="shrink-0 rounded-full border border-gray-200 px-2.5 py-1.5 text-[10px] text-gray-600 hover:border-[#e6007e]/50 hover:text-[#b1005f]">{suggestion}</button>)}
+              {SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => void send(suggestion)} className="shrink-0 rounded-full border border-gray-200 px-2.5 py-1.5 text-[10px] text-gray-600 hover:border-[#0071e3]/50 hover:text-[#0066cc]">{suggestion}</button>)}
             </div>
           )}
 
@@ -134,7 +134,7 @@ export function CanvasAgent({
             <label htmlFor="canvas-agent-prompt" className="sr-only">Donner une consigne à l’agent AIME</label>
             <div className="flex items-end gap-2 rounded-2xl border border-gray-200 bg-[#f5f5f7] p-1.5 pl-3 focus-within:border-gray-400">
               <textarea id="canvas-agent-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }} rows={2} placeholder="Donnez une consigne au canevas…" className="max-h-28 min-h-[40px] flex-1 resize-y bg-transparent py-2 text-[12px] leading-relaxed outline-none placeholder:text-gray-400" />
-              <button type="submit" disabled={!prompt.trim() || busy} aria-label="Envoyer la consigne" className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#161616] text-white transition-colors hover:bg-[#e6007e] disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
+              <button type="submit" disabled={!prompt.trim() || busy} aria-label="Envoyer la consigne" className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#161616] text-white transition-colors hover:bg-[#0071e3] disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
             </div>
             <p className="mt-1.5 px-1 text-[9px] text-gray-400">Entrée pour envoyer · ⇧ Entrée pour aller à la ligne · ⌘Z pour annuler</p>
           </form>

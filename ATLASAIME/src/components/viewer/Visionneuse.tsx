@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Check, ExternalLink, LayoutGrid, Library, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, Check, Columns2, ExternalLink, LayoutGrid, Library, Plus, Search, X } from 'lucide-react';
 import type { Project } from '../../types';
 import type { RepoSnapshot } from '../../data/repos';
 import { hostOf } from '../../data/repos';
@@ -23,6 +23,7 @@ import { YOUTUBE_CHANNEL, youtubeEmbed } from '../../data/youtube';
 import { systemForRepo } from '../../data/designSystems';
 import { AtlasLogo } from '../ui/controls';
 import { FeatureCell, FeatureGroups } from './FeatureCell';
+import { CompareView } from './CompareView';
 import { cn } from '../../utils/cn';
 import { WorkspaceNav } from '../ui/WorkspaceNav';
 
@@ -63,6 +64,7 @@ export function Visionneuse({
   const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
+  const [compare, setCompare] = useState(false);
   const [draft, setDraft] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [limit, setLimit] = useState(24);
@@ -87,6 +89,7 @@ export function Visionneuse({
   }, [items, source, signal, q]);
 
   const selected = items.find((i) => i.id === selectedId) ?? null;
+  const pickedItems = items.filter((i) => picked.includes(i.id));
   const stats = {
     total: items.length,
     live: items.filter((i) => i.signals.includes('fonctionnel')).length,
@@ -153,6 +156,14 @@ export function Visionneuse({
             else if (page === 'systems') onOpenSystems();
             else if (page === 'desk') onOpenDesk();
           }} /></div>
+          <button
+            type="button"
+            disabled={picked.length === 0}
+            onClick={() => setCompare(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-40"
+          >
+            <Columns2 className="h-3.5 w-3.5" /> {picked.length > 1 ? `Comparer · ${picked.length}` : 'Plein écran'}
+          </button>
           <button
             type="button"
             disabled={picked.length === 0}
@@ -294,6 +305,8 @@ export function Visionneuse({
           </div>
         </div>
       )}
+
+      {compare && pickedItems.length > 0 && <CompareView items={pickedItems} onClose={() => setCompare(false)} />}
 
       {notice && <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-xs text-white shadow-lg">{notice}</div>}
     </div>

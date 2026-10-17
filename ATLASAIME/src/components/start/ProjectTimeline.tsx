@@ -133,7 +133,7 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
           return (
             <button key={r.name} type="button" onClick={() => { setSelected(r.name); setFinalizing(false); }} className="group relative w-[230px] shrink-0 snap-start pb-2 pr-5 text-left sm:w-[270px]" aria-pressed={chosen}>
               <div className="flex items-center gap-0">
-                <span className={cn('h-3 w-3 shrink-0 rounded-full border-2 transition-all', chosen ? 'scale-125 border-[#e6007e] bg-[#e6007e]' : 'border-gray-400 bg-white group-hover:border-[#e6007e]')} />
+                <span className={cn('h-3 w-3 shrink-0 rounded-full border-2 transition-all', chosen ? 'scale-125 border-[#0071e3] bg-[#0071e3]' : 'border-gray-400 bg-white group-hover:border-[#0071e3]')} />
                 <span className="h-px flex-1 bg-gray-300" />
               </div>
               <div className="pt-5">
@@ -164,7 +164,7 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
                 <div className="mt-3 flex flex-wrap gap-3">
                   <a href={githubRepoUrl(active.name)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-700 hover:underline">Dépôt source <ExternalLink className="h-3 w-3" /></a>
                   {info.source && <a href={`${githubRepoUrl(active.name)}/blob/main/${info.source}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-700 hover:underline">Document cité <ExternalLink className="h-3 w-3" /></a>}
-                  {onOpenRepo && <button type="button" onClick={onOpenRepo} className="text-[11px] font-medium text-[#a5005a] hover:underline">Ouvrir la visionneuse</button>}
+                  {onOpenRepo && <button type="button" onClick={onOpenRepo} className="text-[11px] font-medium text-[#0071e3] hover:underline">Ouvrir la visionneuse</button>}
                 </div>
               </div>
             </div>
@@ -187,7 +187,7 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => emit('continuer')} className="flex items-center gap-2 rounded-xl bg-[#161616] px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#e6007e]"><Play className="h-3.5 w-3.5 fill-current" /> Continuer avec l’IA</button>
+              <button type="button" onClick={() => emit('continuer')} className="flex items-center gap-2 rounded-xl bg-[#161616] px-4 py-2.5 text-[12px] font-semibold text-white hover:bg-[#0071e3]"><Play className="h-3.5 w-3.5 fill-current" /> Continuer avec l’IA</button>
               <button type="button" onClick={() => emit('reparer')} className={cn('flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[12px] font-semibold', broken.length ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50')}><Wrench className="h-3.5 w-3.5" /> Réparer avec l’IA{broken.length ? ` · ${broken.length}` : ''}</button>
               <button type="button" onClick={() => setFinalizing((v) => !v)} aria-expanded={finalizing} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[12px] font-semibold text-gray-700 hover:bg-gray-50"><BadgeCheck className="h-3.5 w-3.5" /> Finaliser et mettre à jour l’estimation</button>
             </div>
@@ -199,7 +199,7 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
                   {valuation.gates.map((gate) => (
                     <li key={gate}>
                       <label className="flex cursor-pointer items-start gap-2.5 text-[12px] text-gray-700">
-                        <span className={cn('mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border', done.includes(gate) ? 'border-[#e6007e] bg-[#e6007e] text-white' : 'border-gray-300 bg-white')}>{done.includes(gate) && <Check className="h-3 w-3" />}</span>
+                        <span className={cn('mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border', done.includes(gate) ? 'border-[#0071e3] bg-[#0071e3] text-white' : 'border-gray-300 bg-white')}>{done.includes(gate) && <Check className="h-3 w-3" />}</span>
                         <input type="checkbox" className="sr-only" checked={done.includes(gate)} onChange={() => toggleDone(gate)} />
                         {gate}
                       </label>
@@ -208,7 +208,7 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
                 </ul>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                   <span className="font-mono text-[11px] text-gray-500">Nouvelle estimation : {valuation.completion} % · {euro(valuation.low)} – {euro(valuation.high)}</span>
-                  <button type="button" onClick={() => emit('finaliser')} className="rounded-xl bg-[#161616] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#e6007e]">Envoyer le signal de finalisation</button>
+                  <button type="button" onClick={() => emit('finaliser')} className="rounded-xl bg-[#161616] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#0071e3]">Envoyer le signal de finalisation</button>
                 </div>
               </div>
             )}
@@ -216,7 +216,7 @@ export function ProjectTimeline({ repos, onOpenRepo }: { repos: RepoSnapshot[]; 
 
           <div className="border-t border-gray-100 bg-[#faf9f8] p-5 lg:border-l lg:border-t-0">
             <div className="flex items-center justify-between text-[12px]"><span className="font-medium">Avancement documentaire</span><span className="font-mono">{valuation.completion} %</span></div>
-            <div className="mt-2 h-1 overflow-hidden rounded-full bg-gray-200"><div className="h-full rounded-full bg-[#e6007e] transition-all duration-500" style={{ width: `${valuation.completion}%` }} /></div>
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-gray-200"><div className="h-full rounded-full bg-[#0071e3] transition-all duration-500" style={{ width: `${valuation.completion}%` }} /></div>
             {done.length > 0 && <p className="mt-1.5 font-mono text-[10px] text-gray-400">{done.length}/{valuation.gates.length} condition(s) déclarée(s) remplie(s) · à vérifier</p>}
             <div className="mt-5 font-mono text-[10px] uppercase tracking-wider text-gray-400">Coût de reconstruction · indicatif</div>
             <div className="mt-1 text-xl font-semibold">{euro(valuation.low)} – {euro(valuation.high)}</div>

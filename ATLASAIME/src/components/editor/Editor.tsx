@@ -408,7 +408,7 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
           fragmentId: customCopy?.id ?? cell.fragmentId,
           label: `Métamorphose · ${fragments.get(cell.fragmentId!)?.name ?? 'fragment'}`,
           rect: p.arrangement === 'libre' ? cascadeRect(p.cells.length) : undefined,
-          settings: { ...structuredClone(cell.settings), designVariant: 'fuchsia', preview: 'capture' as const, radius: 4, locks: { ...cell.settings.locks, content: false, position: false } },
+          settings: { ...structuredClone(cell.settings), designVariant: 'editorial', preview: 'capture' as const, radius: 4, locks: { ...cell.settings.locks, content: false, position: false } },
         }],
       };
     });

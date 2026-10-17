@@ -30,7 +30,7 @@ function generatedSections(brief: Brief): TextContent[] {
         : trimPrompt(brief.prompt);
   const voice: Record<Brief['visualDirection'], string> = {
     rose: 'Rose doux, lumière naturelle et accents chaleureux.',
-    fuchsia: 'Fuchsia précis, noir encre et surfaces lumineuses.',
+    fuchsia: 'Bleu net, blanc lumineux et surfaces épurées.',
     sombre: 'Nuit profonde, contraste élevé et lumière maîtrisée.',
     editorial: 'Typographie ample, espace généreux et rythme éditorial.',
     sobre: 'Clarté, repères nets et interface apaisée.',
@@ -39,7 +39,7 @@ function generatedSections(brief: Brief): TextContent[] {
     eyebrow: `AIME · ${brief.typeId === 'app' ? 'Application web' : brief.typeId.replace('-', ' ')}`,
     title,
     body: `${brief.prompt} ${brief.rationale}`,
-    tone: brief.visualDirection === 'sombre' || brief.visualDirection === 'fuchsia' ? 'sombre' : 'clair',
+    tone: brief.visualDirection === 'sombre' ? 'sombre' : 'clair',
   };
   const cta: TextContent = {
     eyebrow: 'Prochaine étape',
@@ -114,7 +114,7 @@ export function generateSiteFromBrief(brief: Brief, answers: Record<string, stri
     ...brief,
     audience: audience || brief.audience,
     primaryAction: primaryAction || brief.primaryAction,
-    visualDirection: visual ? (/fuchsia|magenta/i.test(visual) ? 'fuchsia' : /rose|poudré|poudre/i.test(visual) ? 'rose' : /sombre|noir/i.test(visual) ? 'sombre' : /éditorial|editorial|élégant|elegant/i.test(visual) ? 'editorial' : 'sobre') : brief.visualDirection,
+    visualDirection: visual ? (/fuchsia|magenta|bleu|blue/i.test(visual) ? 'editorial' : /rose|poudré|poudre/i.test(visual) ? 'rose' : /sombre|noir/i.test(visual) ? 'sombre' : /éditorial|editorial|élégant|elegant/i.test(visual) ? 'editorial' : 'sobre') : brief.visualDirection,
     requestedScope: answers.scope?.trim() ? (/priv[ée]|interne/i.test(answers.scope) ? 'privé' : /public|en ligne/i.test(answers.scope) ? 'public' : 'prototype à valider') : brief.requestedScope,
   };
 
@@ -129,7 +129,7 @@ export function generateSiteFromBrief(brief: Brief, answers: Record<string, stri
 
   project.customFragments.push(...sectionFragments, summary);
   const textVariant: NonNullable<Cell['settings']['designVariant']> = resolvedBrief.visualDirection === 'sombre' ? 'noir'
-    : resolvedBrief.visualDirection === 'fuchsia' ? 'fuchsia'
+    : resolvedBrief.visualDirection === 'fuchsia' ? 'editorial'
       : resolvedBrief.visualDirection === 'rose' ? 'rose'
         : resolvedBrief.visualDirection === 'editorial' ? 'editorial' : 'original';
   const referenceCells = project.cells.filter((cell) => cell.fragmentId);
@@ -146,9 +146,9 @@ export function generateSiteFromBrief(brief: Brief, answers: Record<string, stri
   }];
   if (resolvedBrief.visualDirection === 'sombre') project.theme = { ...project.theme, background: 'noir' };
   const generatedVariant = resolvedBrief.visualDirection === 'sombre' ? 'noir'
-    : resolvedBrief.visualDirection === 'fuchsia' ? 'fuchsia'
+    : resolvedBrief.visualDirection === 'fuchsia' ? 'editorial'
       : resolvedBrief.visualDirection === 'rose' ? 'rose'
-      : resolvedBrief.visualDirection === 'editorial' ? 'editorial' : 'original';
+        : resolvedBrief.visualDirection === 'editorial' ? 'editorial' : 'original';
   if (generatedVariant !== 'original') {
     project.cells = project.cells.map((cell) => ({ ...cell, settings: { ...cell.settings, designVariant: generatedVariant } }));
   }

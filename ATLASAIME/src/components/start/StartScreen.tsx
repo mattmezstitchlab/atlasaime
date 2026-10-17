@@ -14,6 +14,7 @@ import { cn } from '../../utils/cn';
 import { AimeHero } from './AimeHero';
 import { ProjectTimeline } from './ProjectTimeline';
 import { FusionSection } from './FusionSection';
+import { DomainStitch } from './DomainStitch';
 import { WorkspaceNav } from '../ui/WorkspaceNav';
 
 export interface StartScreenProps {
@@ -350,6 +351,8 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
         <ProjectTimeline repos={repos} onOpenRepo={onOpenViewer} />
 
         <FusionSection repos={repos} onCreate={onCreate} />
+
+        <DomainStitch repos={repos} onCreate={onCreate} />
 
         {/* Assistant */}
         <section ref={wizardRef}>

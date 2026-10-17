@@ -103,14 +103,14 @@ export function DocumentDesk({ onBack, onOpenViewer, onOpenSystems }: { onBack: 
             </button>
           ))}
           <div className="my-4 border-t border-gray-100" />
-          <button type="button" onClick={() => setMode('agents')} className={cn('flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px]', mode === 'agents' ? 'bg-[#e6007e] text-white' : 'text-gray-600 hover:bg-gray-100')}><Users className="h-3.5 w-3.5" /> Spécialités AIME <span className="ml-auto font-mono text-[10px] opacity-60">{AGENTS.length}</span></button>
+          <button type="button" onClick={() => setMode('agents')} className={cn('flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px]', mode === 'agents' ? 'bg-[#0071e3] text-white' : 'text-gray-600 hover:bg-gray-100')}><Users className="h-3.5 w-3.5" /> Spécialités AIME <span className="ml-auto font-mono text-[10px] opacity-60">{AGENTS.length}</span></button>
           <p className="mt-6 text-[10px] leading-relaxed text-gray-400">Inventaire de chemins publics GitHub. Le contenu se charge seulement lorsque vous ouvrez un fichier. Aucun document privé n’est accessible.</p>
         </aside>
 
         <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto max-w-5xl">
             <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400">Bibliothèque de travail · sources vérifiables</div>
-            <h1 className="font-display mt-2 text-4xl sm:text-5xl">{mode === 'agents' ? <>Les spécialités <em className="text-[#e6007e]">se retrouvent.</em></> : <>Tout est <em className="text-[#e6007e]">à sa place.</em></>}</h1>
+            <h1 className="font-display mt-2 text-4xl sm:text-5xl">{mode === 'agents' ? <>Les spécialités <em className="text-[#0071e3]">se retrouvent.</em></> : <>Tout est <em className="text-[#0071e3]">à sa place.</em></>}</h1>
             <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-gray-500">{mode === 'agents' ? 'Spécialités éditoriales inspirées des fichiers publics, pas des modèles connectés ni des agents autonomes. NOEMA est une constitution proposée.' : 'Manifestes, audits, mémoires publiques, instructions, systèmes et architectures : filtrés par dossier, sujet et projet.'}</p>
 
             <div className="no-scrollbar mt-6 flex gap-2 overflow-x-auto pb-2 md:hidden">
@@ -120,7 +120,7 @@ export function DocumentDesk({ onBack, onOpenViewer, onOpenSystems }: { onBack: 
 
             {mode === 'agents' ? (
               <div className="mt-8 space-y-6">
-                <div className="rounded-xl border border-[#e6007e]/20 bg-[#fff0f8] px-4 py-3 text-[13px] font-medium text-[#9b0055]">{WELCOME_MESSAGE} <span className="font-normal">· Invitation locale, non envoyée à GitHub ni à un agent externe.</span></div>
+                <div className="rounded-xl border border-[#0071e3]/20 bg-[#eef4ff] px-4 py-3 text-[13px] font-medium text-[#0a5bd6]">{WELCOME_MESSAGE} <span className="font-normal">· Invitation locale, non envoyée à GitHub ni à un agent externe.</span></div>
                 {(['architecture', 'creation', 'relation', 'temps', 'design', 'preuve'] as const).map((cat) => {
                   const agents = AGENTS.filter((a) => a.category === cat);
                   if (!agents.length) return null;

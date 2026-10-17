@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import type { Project } from './types';
+import type { CollectionId, Project } from './types';
 import { StartScreen } from './components/start/StartScreen';
 import { Editor } from './components/editor/Editor';
 import { Visionneuse } from './components/viewer/Visionneuse';
 import { DesignSystems } from './components/viewer/DesignSystems';
 import { DocumentDesk } from './components/start/DocumentDesk';
 import { decodeProject, loadProjects, removeProject, saveProject, useGithubRepos } from './hooks/useAtlas';
+import { COLLECTIONS } from './data/repos';
 import { createProject, uid } from './data/templates';
+import { buildStitchProject, decodeAssemblage, resolveAssembly, type Section } from './data/stitch';
+import { AssemblageView } from './components/start/AssemblageView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function readShared(): Project | null {
@@ -23,12 +26,33 @@ export function App() {
   const [current, setCurrent] = useState<Project | null>(null);
   const [screen, setScreen] = useState<'home' | 'viewer' | 'systems' | 'desk'>('home');
   const [systemId, setSystemId] = useState<string | null>(null);
+  const [assembly, setAssembly] = useState<{ domain: CollectionId; picks: Section[] } | null>(null);
 
   useEffect(() => {
     const onHash = () => setShared(readShared());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  useEffect(() => {
+    const apply = () => {
+      const m = window.location.hash.match(/#assemblage=([A-Za-z0-9_-]+)/);
+      if (!m) {
+        setAssembly(null);
+        return;
+      }
+      const dec = decodeAssemblage(m[1]);
+      if (!dec) {
+        setAssembly(null);
+        return;
+      }
+      const res = resolveAssembly(dec.ids, github.repos);
+      if (res) setAssembly(res);
+    };
+    apply();
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
+  }, [github.repos]);
 
   useEffect(() => {
     document.title =
@@ -138,25 +162,44 @@ export function App() {
   }
 
   return (
-    <StartScreen
-      github={github}
-      recent={recent}
-      onOpen={setCurrent}
-      onCreate={(p) => {
-        setRecent(saveProject(p));
-        setCurrent(p);
-      }}
-      onDelete={(id) => setRecent(removeProject(id))}
-      onDuplicate={(p) => {
-        duplicate(p);
-      }}
-      onOpenViewer={() => setScreen('viewer')}
-      onOpenSystems={() => {
-        setSystemId(null);
-        setScreen('systems');
-      }}
-      onOpenDesk={() => setScreen('desk')}
-    />
+    <>
+      <StartScreen
+        github={github}
+        recent={recent}
+        onOpen={setCurrent}
+        onCreate={(p) => {
+          setRecent(saveProject(p));
+          setCurrent(p);
+        }}
+        onDelete={(id) => setRecent(removeProject(id))}
+        onDuplicate={(p) => {
+          duplicate(p);
+        }}
+        onOpenViewer={() => setScreen('viewer')}
+        onOpenSystems={() => {
+          setSystemId(null);
+          setScreen('systems');
+        }}
+        onOpenDesk={() => setScreen('desk')}
+      />
+      {assembly && (
+        <AssemblageView
+          picks={assembly.picks}
+          domain={assembly.domain}
+          onClose={() => {
+            history.replaceState(null, '', window.location.pathname);
+            setAssembly(null);
+          }}
+          onOpenEditor={() => {
+            const domainLabel = COLLECTIONS.find((c) => c.id === assembly.domain)?.label ?? assembly.domain;
+            const p = buildStitchProject(`Assemblage partagé · ${domainLabel}`, assembly.picks, github.repos);
+            setRecent(saveProject(p));
+            setCurrent(p);
+            setAssembly(null);
+          }}
+        />
+      )}
+    </>
   );
 }
 
