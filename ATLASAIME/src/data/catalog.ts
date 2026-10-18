@@ -1,3 +1,4 @@
+import { repoPreview } from './repoPreview';
 import type { EmbedStatus } from './githubSnapshot';
 import type { Fragment, FragmentKind, Project } from '../types';
 import type { RepoSnapshot } from './repos';
@@ -30,6 +31,7 @@ export interface CatalogItem {
   url?: string;
   repo?: string;
   poster?: string;
+  previewLabel?: string;
   embed: EmbedStatus | 'unknown';
   language?: string | null;
   size?: number;
@@ -277,6 +279,7 @@ export function buildCatalog(repos: RepoSnapshot[], projects: Project[], extras:
       url: r.homepage ?? undefined,
       repo: r.name,
       poster: frag.poster,
+      previewLabel: repoPreview(r).label,
       embed: r.embed,
       language: r.language,
       size: r.size,

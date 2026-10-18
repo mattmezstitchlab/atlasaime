@@ -180,6 +180,7 @@ export interface BottomBarProps {
   onExport: () => void;
   onCopyLink: () => void;
   lastSavedAt: number;
+  saveError?: string;
   historyCount: number;
 }
 
@@ -192,7 +193,7 @@ export function BottomBar(p: BottomBarProps) {
         <span className="flex shrink-0 items-center gap-2">
           <span className="animate-pulse-subtle h-2 w-2 rounded-full bg-black" />
           <span className="hidden font-medium text-gray-700 sm:inline">Sauvegarde automatique</span>
-          <span className="hidden text-gray-400 sm:inline">· il y a {timeAgo(p.lastSavedAt)}</span>
+          <span className="hidden text-gray-400 sm:inline">{p.saveError ? "· non sauvegardé sur cet appareil" : `· il y a ${timeAgo(p.lastSavedAt)}`}</span>
         </span>
         <span className="hidden items-center gap-3 text-gray-400 xl:flex">
           <span className="h-4 w-px bg-gray-200" />

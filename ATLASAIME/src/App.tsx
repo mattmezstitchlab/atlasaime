@@ -8,7 +8,7 @@ import { DocumentDesk } from './components/start/DocumentDesk';
 import { decodeProject, loadProjects, removeProject, saveProject, useGithubRepos } from './hooks/useAtlas';
 import { COLLECTIONS } from './data/repos';
 import { createProject, uid } from './data/templates';
-import { buildStitchProject, decodeAssemblage, resolveAssembly, type Section } from './data/stitch';
+import { buildStitchProject, decodeAssemblage, resolveAssembly, type LinkBand, type Section } from './data/stitch';
 import { AssemblageView } from './components/start/AssemblageView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -26,7 +26,7 @@ export function App() {
   const [current, setCurrent] = useState<Project | null>(null);
   const [screen, setScreen] = useState<'home' | 'viewer' | 'systems' | 'desk'>('home');
   const [systemId, setSystemId] = useState<string | null>(null);
-  const [assembly, setAssembly] = useState<{ domain: CollectionId; picks: Section[] } | null>(null);
+  const [assembly, setAssembly] = useState<{ domain: CollectionId; picks: Section[]; links?: LinkBand[] } | null>(null);
 
   useEffect(() => {
     const onHash = () => setShared(readShared());
@@ -46,8 +46,8 @@ export function App() {
         setAssembly(null);
         return;
       }
-      const res = resolveAssembly(dec.ids, github.repos);
-      if (res) setAssembly(res);
+      const res = dec.picks ? { domain: dec.domain, picks: dec.picks, links: dec.links } : resolveAssembly(dec.ids, github.repos);
+      setAssembly(res ? { ...res, domain: dec.domain } : null);
     };
     apply();
     window.addEventListener('hashchange', apply);
@@ -166,6 +166,7 @@ export function App() {
       <StartScreen
         github={github}
         recent={recent}
+        onRestored={setRecent}
         onOpen={setCurrent}
         onCreate={(p) => {
           setRecent(saveProject(p));
@@ -185,6 +186,7 @@ export function App() {
       {assembly && (
         <AssemblageView
           picks={assembly.picks}
+          links={assembly.links}
           domain={assembly.domain}
           onClose={() => {
             history.replaceState(null, '', window.location.pathname);
@@ -192,7 +194,7 @@ export function App() {
           }}
           onOpenEditor={() => {
             const domainLabel = COLLECTIONS.find((c) => c.id === assembly.domain)?.label ?? assembly.domain;
-            const p = buildStitchProject(`Assemblage partagé · ${domainLabel}`, assembly.picks, github.repos);
+            const p = buildStitchProject(`Assemblage partagé · ${domainLabel}`, assembly.picks, github.repos, assembly.links);
             setRecent(saveProject(p));
             setCurrent(p);
             setAssembly(null);

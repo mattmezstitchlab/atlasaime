@@ -2,6 +2,17 @@
 
 Compositeur de pages à partir des projets publics de `mattmezstitchlab` : canevas éditable, visionneuse GitHub/YouTube, design systems, chronologie des projets et bureau documentaire.
 
+## Parcours recentré
+
+- L’accueil privilégie l’exploration/comparaison et la lecture des documents.
+- L’atelier regroupe trois méthodes : idée, choix manuel et domaine. Le brief est traité immédiatement par des règles locales, sans étapes d’agents simulées.
+- Les sources proposées restent à vérifier ; les spécialités sont présentées comme références documentaires.
+- Les estimations sont conservées dans une section secondaire repliée. Les design systems restent accessibles depuis les outils visuels et les vues de projets.
+- Le mode domaine extrait des textes de README, pas des composants fonctionnels. Les textes de liaison utilisent des modèles locaux.
+- Les anciennes compositions locales sont conservées. Le format additionnel `atlas.backup` permet désormais la restauration complète. Aucune synchronisation entre appareils n’est connectée.
+
+Tests de rendu (sans navigateur) : `node --test tests/workspace.test.mjs`.
+
 ## Lancer localement
 
 Prérequis : Node.js 20 et npm.
@@ -34,7 +45,7 @@ git remote add origin https://github.com/VOTRE-COMPTE/VOTRE-DEPOT.git
 git push -u origin main
 ```
 
-Le workflow `.github/workflows/ci.yml` exécute `npm ci`, le contrôle TypeScript et le build à chaque push sur `main`/`master` et à chaque pull request. Il est en lecture seule et ne déploie pas.
+Une configuration CI séparée est fournie pour installation propre, TypeScript, tests, build et audit production. Son ajout dans `.github/workflows/ci.yml` reste à effectuer via un accès GitHub autorisé à modifier les workflows ; aucun workflow n’est installé par cette PR.
 
 ## Publication sur Vercel
 
@@ -48,7 +59,7 @@ Aucune variable d'environnement n'est requise. `vercel.json` ajoute des en-tête
 
 ### État des audits npm
 
-`npm audit --omit=dev --audit-level=moderate` est propre (0 vulnérabilité dans les dépendances livrées au navigateur). L'audit complet peut encore signaler `braces`/`micromatch` via `vite-plugin-singlefile` et un avertissement de bas niveau dans `esbuild` : ils ne sont pas embarqués dans `dist`. Le rapport npm ne propose pour le plugin qu'un downgrade `vite-plugin-singlefile@0.9.0`, incompatible avec la version de Vite utilisée ; ne pas exécuter `npm audit fix --force`. Le plugin est appelé avec sa configuration par défaut (`inlinePattern: []`), donc le chemin `micromatch.isMatch` signalé n'est pas invoqué par le build actuel. Réévaluer ce point lorsqu'une version amont corrigée sera disponible.
+Le plugin `vite-plugin-singlefile` est mis à jour vers 2.3.4 pour retirer la chaîne vulnérable signalée dans l’audit précédent. Vérifier régulièrement `npm audit` et éviter les corrections forcées non testées.
 
 ## Fonctionnement et limites de production
 
@@ -60,10 +71,29 @@ Aucune variable d'environnement n'est requise. `vercel.json` ajoute des en-tête
 - **GitHub** : un instantané public est inclus pour un premier rendu. La synchronisation directe utilise l'API publique non authentifiée; elle est soumise aux limites de débit GitHub. Aucun token privé ne doit être placé dans une variable `VITE_*`.
 - **YouTube** : la liste est un instantané des 15 éléments fournis par le flux public de la chaîne lors du relevé. Une actualisation complète nécessiterait un connecteur ou une API configurée côté serveur.
 - **Sources externes** : les sites qui refusent les iframes sont présentés en capture lorsqu'elle existe. Les miniatures, polices, sites et embeds nécessitent une connexion internet et peuvent changer ou disparaître.
-- **Import de fichiers** : les petits imports sont conservés dans le stockage local du navigateur; les gros fichiers/imports vidéo ne doivent pas être considérés comme synchronisés ou disponibles sur un autre appareil.
+- **Import de fichiers** : images, vidéos et PDF sont lus intégralement pour une sauvegarde portable (10 Mo par fichier maximum). Le quota réel du navigateur reste plus bas sur certains appareils : un échec est signalé et le travail reste uniquement en mémoire jusqu’à un export ou une sauvegarde réussie. Les anciennes URL `blob:` ne sont pas récupérables après expiration ; réimporter le fichier.
 - **Estimations** : la complétion mesure les preuves publiques et les conditions cochées localement. La fourchette en euros est un coût illustratif de reconstruction, non un revenu, devis ou prix de marché.
 - **Fusions** : les cartes sont des propositions documentées pour aider à préparer une architecture. Aucune fusion Git, migration, écriture dans les dépôts sources ou publication n'est exécutée par ATLAS.
 
 ## Accès Git et déploiement
 
 Dans l'environnement de réalisation, le dossier n'avait pas de répertoire `.git`, de remote GitHub, de configuration Vercel ou de jeton de publication. Les fichiers et vérifications sont préparés, mais aucun push vers votre compte ni déploiement Vercel ne peut être effectué sans ces accès. Le guide ci-dessus permet de les connecter sans intégrer de secret au code.
+
+## Aperçus des dépôts
+
+Les cartes de l’accueil et de la visionneuse distinguent les captures de sites (service externe), les visuels déclarés dans les métadonnées et les maquettes indicatives. Sans site disponible ni visuel déclaré, un schéma SVG local est composé à partir de la catégorie et des métadonnées. Il ne reconstruit pas le code et porte la mention « Maquette — non fonctionnelle ». Si une image distante échoue, la carte revient à cette maquette. Le canevas reçoit également ces posters de remplacement.
+
+Cette étape ne lance aucun dépôt pour en prendre une capture, ne recherche pas automatiquement les images des README et ne publie aucun des projets sources. Une image d’erreur renvoyée avec HTTP 200 par le service externe ne peut pas être détectée comme un échec de chargement. Les captures ou visuels peuvent être anciens ; leur présence ne prouve pas qu’une application fonctionne.
+
+## Fiabilité : sauvegarde, restauration et partage
+
+- Aucune suppression automatique au-delà de 24 compositions ; toutes restent accessibles dans le carrousel de l’accueil.
+- Une erreur d’écriture conserve les compositions et médias en mémoire dans l’onglet, sans tronquer la sauvegarde précédente. Une alerte persistante propose l’export et le navigateur est averti avant fermeture. Cela ne garantit pas la survie d’un onglet fermé ou d’un navigateur interrompu.
+- Un stockage existant illisible est protégé contre l’écrasement pendant la session. Conserver une copie des données brutes avant toute réparation manuelle ; aucun reset destructif n’est automatique.
+- Accueil : télécharger toutes les compositions ou restaurer un fichier `atlas.backup` v1. Restauration en copies avec de nouveaux identifiants, sans remplacer les projets déjà présents. Éditeur → Export : sauvegarde complète de la composition courante. Le JSON technique historique reste distinct et n’est pas une sauvegarde restaurable.
+- Les fichiers embarqués sont inclus dans la sauvegarde complète, non chiffrée (40 Mo par fichier de sauvegarde maximum). Les URL externes et dépôts ne sont pas archivés avec leur contenu ; leur disponibilité future n’est pas garantie. Les anciennes références `blob:` bloquent l’export portable plutôt que de produire une fausse sauvegarde complète.
+- Les nouveaux liens d’assemblage v2 transportent les fragments et textes de liaison, le domaine et l’ordre. Les anciens liens par identifiants restent lisibles, sans pouvoir récupérer des informations qu’ils n’avaient jamais embarquées. Limite : 200 000 caractères ; utiliser l’export au-delà. Les liens sont publics à toute personne qui les possède, non chiffrés et non révocables.
+- La copie dans le presse-papiers n’annonce un succès qu’après confirmation. Les entrées partagées et les sauvegardes restaurées passent une validation de structure et de protocoles ; ce n’est pas un contrôle d’accès.
+- Le stockage reste `localStorage`, sans compte ni synchronisation et sans verrou multi-onglets. Une base locale de médias (IndexedDB) et des tests d’interaction navigateur sont les prochaines étapes, pas des fonctions déjà livrées.
+
+Les commandes de contrôle TypeScript, tests, build et audit des dépendances ont été exécutées localement ; la CI distante reste à installer. Recette navigateur à effectuer avant fusion : importer image/PDF/vidéo, exporter, recharger, restaurer sur un autre profil, tester le refus du presse-papiers et du stockage, puis ouvrir un assemblage partagé dans une session vierge.

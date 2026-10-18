@@ -18,7 +18,6 @@ import { AssemblageView } from './AssemblageView';
 import { cn } from '../../utils/cn';
 
 const DOMAIN_LABEL: Record<string, string> = Object.fromEntries(COLLECTIONS.map((c) => [c.id, c.label]));
-const RESOLVABLE = /^(gh:|m:|url:|yt:)/;
 
 export function DomainStitch({ repos, onCreate }: { repos: RepoSnapshot[]; onCreate: (p: Project) => void }) {
   const [domain, setDomain] = useState<string | null>(null);
@@ -61,14 +60,15 @@ export function DomainStitch({ repos, onCreate }: { repos: RepoSnapshot[]; onCre
     window.setTimeout(() => setNotice(null), 2400);
   };
 
-  const share = () => {
-    const ids = picks.map((p) => p.fragment.id).filter((id) => RESOLVABLE.test(id));
-    if (!ids.length || !domain) return;
-    const code = encodeAssemblage(domain as CollectionId, ids);
-    const url = `${location.origin}${location.pathname}#assemblage=${code}`;
-    history.replaceState(null, '', url);
-    navigator.clipboard?.writeText(url).catch(() => {});
-    flash('Lien partageable copié');
+  const share = async () => {
+    if (!picks.length || !domain) return;
+    try {
+      const code = encodeAssemblage(domain as CollectionId, picks.map(p => p.fragment.id), picks, links);
+      const url = `${location.origin}${location.pathname}#assemblage=${code}`;
+      if (!navigator.clipboard) throw new Error('Copie indisponible dans ce navigateur.');
+      await navigator.clipboard.writeText(url);
+      flash('Lien partageable copié');
+    } catch (e) { flash(e instanceof Error ? e.message : 'Copie impossible.'); }
   };
 
   return (
@@ -80,7 +80,7 @@ export function DomainStitch({ repos, onCreate }: { repos: RepoSnapshot[]; onCre
             Le même domaine, <em className="text-gray-400">recomposé.</em>
           </h2>
           <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-gray-500">
-            On moissonne les sections de tous tes dépôts, on les classe par domaine et par rôle (accueil, offres, galerie, média, témoignages, appel), puis on assemble un jeu <strong>complémentaire</strong> : une section par rôle, chacune issue d’un dépôt différent, cousue <strong>bord à bord</strong> dans un seul langage visuel.
+            On regroupe les liens, médias et extraits documentaires par domaine et par rôle. Le mode README extrait du texte, pas les composants des applications. Le résultat est une composition visuelle éditable, sans fusion de code ni connexion de données.
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -106,14 +106,14 @@ export function DomainStitch({ repos, onCreate }: { repos: RepoSnapshot[]; onCre
           onClick={() => setBlockLevel((v) => !v)}
           className={cn('flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors', blockLevel ? 'border-[#0071e3] bg-[#0071e3]/10 text-[#0071e3]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300')}
         >
-          <Layers className="h-3.5 w-3.5" /> Niveau bloc · scrape sous-sections {harvesting && <span className="text-[10px]">· récolte…</span>}
+          <Layers className="h-3.5 w-3.5" /> Extraits de README {harvesting && <span className="text-[10px]">· récolte…</span>}
         </button>
         <button
           type="button"
           onClick={() => setMemory((v) => !v)}
           className={cn('flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors', memory ? 'border-[#0071e3] bg-[#0071e3]/10 text-[#0071e3]' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300')}
         >
-          <Sparkles className="h-3.5 w-3.5" /> Mémoire générative · texte de liaison
+          <Sparkles className="h-3.5 w-3.5" /> Texte de liaison · modèles locaux
         </button>
       </div>
 

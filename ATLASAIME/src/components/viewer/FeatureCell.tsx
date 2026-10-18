@@ -1,3 +1,5 @@
+import { RepoPreview } from '../ui/RepoPreview';
+import type { RepoSnapshot } from '../../data/repos';
 import { useState } from 'react';
 import { Check, Minus } from 'lucide-react';
 import type { CatalogItem, FeatureGroup } from '../../data/catalog';
@@ -28,11 +30,13 @@ export function FeatureGroups({ groups, dense = false }: { groups: FeatureGroup[
 
 export function FeatureCell({
   item,
+  repo,
   groups,
   selected,
   onSelect,
 }: {
   item: CatalogItem;
+  repo?: RepoSnapshot;
   groups: FeatureGroup[];
   selected?: boolean;
   onSelect: () => void;
@@ -49,7 +53,7 @@ export function FeatureCell({
       )}
     >
       <div className="relative aspect-[16/10] shrink-0 overflow-hidden bg-gray-100">
-        {item.poster && !failed ? (
+        {repo ? <RepoPreview repo={repo} /> : item.poster && !failed ? (
           <img
             src={item.poster}
             alt=""

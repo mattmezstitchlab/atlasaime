@@ -1,3 +1,4 @@
+import { isProject } from '../data/projectBackup';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { REPO_SNAPSHOT, SNAPSHOT_DATE, GITHUB_USER } from '../data/repos';
@@ -133,38 +134,56 @@ export type GithubState = ReturnType<typeof useGithubRepos>;
 /* ---------- Persistance des projets ---------- */
 
 const STORE_KEY = 'atlas:projects:v2';
+let pendingProjects: Project[] | null = null;
+let storageError = '';
+let unreadableStore = false;
+export const getStorageError = () => storageError;
+function reportStorage(error: string) {
+  storageError = error;
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('atlas:storage'));
+}
+
 
 function readStore(): Project[] | null {
+  if (pendingProjects) return pendingProjects;
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return null;
-    const list = JSON.parse(raw) as Project[];
-    return Array.isArray(list) ? list : null;
+    const list: unknown = JSON.parse(raw);
+    if (!Array.isArray(list) || !list.every(isProject)) throw new Error('Invalid storage');
+    return list;
   } catch {
+    unreadableStore = true;
+    reportStorage('Stockage existant illisible ou inaccessible : aucune donnée enregistrée ne sera remplacée. Conservez cet onglet et sauvegardez votre travail.');
     return null;
   }
 }
 
 function writeStore(list: Project[]) {
   try {
+    if (unreadableStore) throw new Error('Existing storage unreadable');
     localStorage.setItem(STORE_KEY, JSON.stringify(list));
+    pendingProjects = null;
+    reportStorage('');
   } catch {
-    // Quota dépassé : on retire les médias importés lourds
-    const lite = list.map((p) => ({
-      ...p,
-      customFragments: p.customFragments.map((f) => (f.source === 'upload' ? { ...f, url: undefined, poster: undefined } : f)),
-    }));
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(lite));
-    } catch {
-      /* abandon */
-    }
+    pendingProjects = list;
+    reportStorage('Sauvegarde locale impossible. Vos modifications restent dans cet onglet uniquement. Téléchargez une sauvegarde avant de le fermer.');
   }
+}
+
+export function restoreProjects(projects: Project[]): Project[] {
+  if (!projects.every(isProject)) throw new Error('Composition invalide.');
+  // Imported entries use fresh IDs: existing work is never replaced.
+  const now = Date.now();
+  const imported = projects.map(p => ({ ...p, id: `restore-${crypto.randomUUID()}`, updatedAt: now }));
+  const next = [...imported, ...(readStore() ?? [])];
+  writeStore(next);
+  return next;
 }
 
 export function loadProjects(): Project[] {
   const list = readStore();
-  if (list && list.length) return [...list].sort((a, b) => b.updatedAt - a.updatedAt);
+  if (list) return [...list].sort((a, b) => b.updatedAt - a.updatedAt);
   const seed = [seedMemoireActive()];
   writeStore(seed);
   return seed;
@@ -172,7 +191,7 @@ export function loadProjects(): Project[] {
 
 export function saveProject(p: Project): Project[] {
   const list = (readStore() ?? []).filter((x) => x.id !== p.id);
-  const next = [p, ...list].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 24);
+  const next = [p, ...list].sort((a, b) => b.updatedAt - a.updatedAt);
   writeStore(next);
   return next;
 }
@@ -249,11 +268,12 @@ export function encodeProject(p: Project): string {
 }
 
 export function decodeProject(s: string): Project | null {
+  if (s.length > 2_000_000) return null;
   try {
     const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
     const p = JSON.parse(new TextDecoder().decode(bytes)) as Project;
-    return p && Array.isArray(p.cells) && p.layoutId ? p : null;
+    return isProject(p) ? p : null;
   } catch {
     return null;
   }

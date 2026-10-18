@@ -28,7 +28,7 @@ function PanelBody({ item, scrollRef, onScroll, widthPx }: {
           <img src={item.poster} alt={item.name} className="block w-full object-cover object-top" />
           {item.embed !== 'live' && (
             <div className="pointer-events-none sticky bottom-0 bg-black/65 px-3 py-1.5 text-[10px] text-white">
-              {item.embed === 'blocked' ? 'Iframe bloquée' : item.embed === 'unknown' ? 'Aperçu statique' : 'Hors ligne'} · ouvrez le lien pour la version live
+              {item.previewLabel ?? (item.embed === 'blocked' ? 'Iframe bloquée · capture statique' : item.embed === 'unknown' ? 'Aperçu statique' : 'Aperçu non interactif')}
             </div>
           )}
         </div>

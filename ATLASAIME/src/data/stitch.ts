@@ -1,9 +1,10 @@
+import { isProject } from './projectBackup';
 import type { CollectionId, Fragment, Project, ProjectTheme } from '../types';
 import type { RepoSnapshot } from './repos';
-import { collectionOf, GITHUB_USER, repoToFragment } from './repos';
+import { collectionOf, COLLECTIONS, GITHUB_USER, repoToFragment } from './repos';
 import { MEDIA_MAP } from './media';
 import { loadExtras } from './catalog';
-import { createProject, makeTextFragment, uid } from './templates';
+import { createProject, defaultSettings, makeTextFragment, uid } from './templates';
 import type { TextContent } from '../types';
 
 export type SectionRole =
@@ -309,14 +310,25 @@ function b64uDecode<T>(s: string): T | null {
   }
 }
 
-export function encodeAssemblage(domain: CollectionId, ids: string[]): string {
-  return b64uEncode({ d: domain, ids });
+export function encodeAssemblage(domain: CollectionId, ids: string[], picks?: Section[], links: LinkBand[] = []): string {
+  const code = b64uEncode(picks ? { v: 2, d: domain, ids, picks, links } : { d: domain, ids });
+  if (code.length > 200000) throw new Error('Assemblage trop volumineux pour un lien. Utilisez une sauvegarde complète.');
+  return code;
 }
 
-export function decodeAssemblage(code: string): { domain: CollectionId; ids: string[] } | null {
-  const obj = b64uDecode<{ d: string; ids: string[] }>(code);
-  if (obj && typeof obj.d === 'string' && Array.isArray(obj.ids)) return { domain: obj.d as CollectionId, ids: obj.ids };
-  return null;
+export function decodeAssemblage(code: string): { domain: CollectionId; ids: string[]; picks?: Section[]; links?: LinkBand[] } | null {
+  if (code.length > 200000) return null;
+  const obj = b64uDecode<{ v?: number; d: string; ids: string[]; picks?: Section[]; links?: LinkBand[] }>(code);
+  if (!obj || !COLLECTIONS.some(c => c.id === obj.d) || !Array.isArray(obj.ids) || !obj.ids.every(id => typeof id === 'string')) return null;
+  if (obj.v !== undefined) {
+    if (obj.v !== 2 || !Array.isArray(obj.picks) || !Array.isArray(obj.links)) return null;
+    if (!obj.picks.every(p => p && FLOW.includes(p.role) && COLLECTIONS.some(c => c.id === p.domain) && typeof p.source === 'string' && Number.isFinite(p.weight))) return null;
+    const probe = createProject({ name: 'Validation', typeId: 'blank', fill: 'vide' });
+    probe.customFragments = obj.picks.map(p => p.fragment);
+    if (!isProject(probe) || !obj.links.every(l => l && typeof l.id === 'string' && l.text && typeof l.text.title === 'string' && ['body','eyebrow'].every(k => (l.text as unknown as Record<string, unknown>)[k] === undefined || typeof (l.text as unknown as Record<string, unknown>)[k] === 'string'))) return null;
+    return { domain: obj.d as CollectionId, ids: obj.ids, picks: obj.picks, links: obj.links };
+  }
+  return { domain: obj.d as CollectionId, ids: obj.ids };
 }
 
 /** Recompose des sections à partir d'identifiants (pour ouvrir un lien partagé). */
@@ -350,19 +362,16 @@ const STITCH_THEME: Partial<ProjectTheme> = { background: 'blanc', gap: 0, paddi
 export function buildStitchProject(name: string, picks: Section[], repos: RepoSnapshot[], links: LinkBand[] = []): Project {
   const custom: Fragment[] = [];
   const explicit: string[] = [];
+  const appendLink = (link: LinkBand | undefined) => {
+    if (!link) return;
+    const f = makeTextFragment(link.text); custom.push(f); explicit.push(f.id);
+  };
+  appendLink(links[0]);
   picks.forEach((p, i) => {
     const id = p.fragment.id;
-    if (/^(gh:|m:|url:|yt:)/.test(id)) explicit.push(id);
-    else {
-      custom.push(p.fragment);
-      explicit.push(id);
-    }
-    const link = links[i];
-    if (link) {
-      const f = makeTextFragment(link.text);
-      custom.push(f);
-      explicit.push(f.id);
-    }
+    custom.push(p.fragment);
+    explicit.push(id);
+    appendLink(links[i + 1]);
   });
   const project = createProject({
     name,
@@ -374,6 +383,7 @@ export function buildStitchProject(name: string, picks: Section[], repos: RepoSn
     theme: STITCH_THEME,
   });
   project.customFragments = [...custom, ...project.customFragments];
+  project.cells = explicit.map(id => ({ id: uid('cell'), fragmentId: id, settings: defaultSettings(custom.find(f => f.id === id)?.kind) }));
   project.cells.forEach((c) => {
     c.settings = { ...c.settings, radius: 0, border: false, shadow: 'aucune', designVariant: 'editorial', hover: 'aucun', animation: 'aucune' };
   });
