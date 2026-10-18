@@ -1,3 +1,4 @@
+import { downloadBackup } from '../../data/projectBackup';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Search, X, ArrowRight, Globe, Upload, Type, Copy, Check, Download, Lock, Eye, CornerDownLeft } from 'lucide-react';
@@ -202,6 +203,7 @@ export function AddModal({
   };
 
   const onFile = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) { setError('Fichier trop volumineux : 10 Mo maximum pour une sauvegarde locale portable.'); return; }
     const kind = file.type.startsWith('image/') ? (file.type.includes('svg') ? 'svg' : 'image') : file.type.startsWith('video/') ? 'video' : file.type === 'application/pdf' ? 'pdf' : null;
     if (!kind) {
       setError('Format non pris en charge (images, vidéos, SVG, PDF).');
@@ -219,11 +221,12 @@ export function AddModal({
       });
       onClose();
     };
-    if ((kind === 'image' || kind === 'svg') && file.size < 2.5 * 1024 * 1024) {
+    {
       const reader = new FileReader();
       reader.onload = () => finish(String(reader.result));
       reader.readAsDataURL(file);
-    } else finish(URL.createObjectURL(file));
+      reader.onerror = () => setError('Lecture du fichier impossible.');
+    }
   };
 
   const tabs: [AddTab, string, ReactNode][] = [
@@ -342,12 +345,14 @@ export function AddModal({
 
 export function ShareModal({ project, onClose, onCopied }: { project: Project; onClose: () => void; onCopied: () => void }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState('');
   const link = useMemo(() => readOnlyUrl(project), [project]);
   const copy = () => {
-    void navigator.clipboard?.writeText(link);
-    setCopied(true);
-    onCopied();
-    setTimeout(() => setCopied(false), 1800);
+    if (!navigator.clipboard) { setCopyError('Copie indisponible : sélectionnez et copiez le lien manuellement.'); return; }
+    navigator.clipboard.writeText(link).then(() => {
+      setCopyError('');
+      setCopied(true); onCopied(); setTimeout(() => setCopied(false), 1800);
+    }).catch(() => { setCopied(false); setCopyError('Copie refusée : sélectionnez le lien manuellement.'); });
   };
   return (
     <Shell onClose={onClose} label="Partager" className="max-w-md">
@@ -362,7 +367,8 @@ export function ShareModal({ project, onClose, onCopied }: { project: Project; o
               {copied ? 'Copié' : 'Copier'}
             </button>
           </div>
-          <p className="mt-1.5 text-[10px] text-gray-400">La composition entière est encodée dans le lien — aucun serveur nécessaire.</p>
+          <p role="status">{copyError}</p>
+          <p className="mt-1.5 text-[10px] text-gray-400">Lien non chiffré, sans contrôle d’accès ni révocation. Les fichiers importés sont exclus ; utilisez la sauvegarde complète pour les conserver.</p>
         </div>
         <div className="space-y-2 border-t border-gray-100 pt-3">
           <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50/60 p-2.5">
@@ -379,7 +385,7 @@ export function ShareModal({ project, onClose, onCopied }: { project: Project; o
             <span className="flex items-center gap-2.5">
               <Lock className="h-4 w-4 text-gray-700" />
               <span>
-                <span className="block font-medium text-gray-900">Vous · @mattmezstitchlab</span>
+                <span className="block font-medium text-gray-900">Édition locale dans ce navigateur</span>
                 <span className="block text-[10px] text-gray-400">Édition, recadrages et graphe</span>
               </span>
             </span>
@@ -403,6 +409,7 @@ export function ShareModal({ project, onClose, onCopied }: { project: Project; o
 
 export function ExportModal({ project, fragments, onClose }: { project: Project; fragments: Map<string, Fragment>; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
+  const [backupError, setBackupError] = useState('');
   const json = useMemo(() => {
     const payload = {
       format: 'atlas.composition',
@@ -433,6 +440,11 @@ export function ExportModal({ project, fragments, onClose }: { project: Project;
   return (
     <Shell onClose={onClose} label="Export JSON" className="max-w-2xl">
       <Header title="Export de la composition (JSON)" onClose={onClose} />
+      <div className="p-4 text-xs">
+        <button type="button" onClick={() => { try { downloadBackup([project]); setBackupError(''); } catch (e) { setBackupError(e instanceof Error ? e.message : 'Export impossible.'); } }} className="rounded bg-black px-3 py-2 text-white">Sauvegarde complète restaurable (médias inclus)</button>
+        <p className="mt-2">Restauration depuis l’accueil. L’export technique ci-dessous n’inclut pas les fichiers.</p>
+        {backupError && <p role="alert">{backupError}</p>}
+      </div>
       <pre className="max-h-[55vh] overflow-auto bg-[#0f0f11] p-4 font-mono text-[11px] leading-relaxed text-gray-200">{json}</pre>
       <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 px-5 py-3">
         <span className="font-mono text-[10px] text-gray-500">{project.cells.length} conteneurs sérialisés</span>

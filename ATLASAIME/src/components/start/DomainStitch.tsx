@@ -18,7 +18,6 @@ import { AssemblageView } from './AssemblageView';
 import { cn } from '../../utils/cn';
 
 const DOMAIN_LABEL: Record<string, string> = Object.fromEntries(COLLECTIONS.map((c) => [c.id, c.label]));
-const RESOLVABLE = /^(gh:|m:|url:|yt:)/;
 
 export function DomainStitch({ repos, onCreate }: { repos: RepoSnapshot[]; onCreate: (p: Project) => void }) {
   const [domain, setDomain] = useState<string | null>(null);
@@ -61,14 +60,15 @@ export function DomainStitch({ repos, onCreate }: { repos: RepoSnapshot[]; onCre
     window.setTimeout(() => setNotice(null), 2400);
   };
 
-  const share = () => {
-    const ids = picks.map((p) => p.fragment.id).filter((id) => RESOLVABLE.test(id));
-    if (!ids.length || !domain) return;
-    const code = encodeAssemblage(domain as CollectionId, ids);
-    const url = `${location.origin}${location.pathname}#assemblage=${code}`;
-    history.replaceState(null, '', url);
-    navigator.clipboard?.writeText(url).catch(() => {});
-    flash('Lien partageable copié');
+  const share = async () => {
+    if (!picks.length || !domain) return;
+    try {
+      const code = encodeAssemblage(domain as CollectionId, picks.map(p => p.fragment.id), picks, links);
+      const url = `${location.origin}${location.pathname}#assemblage=${code}`;
+      if (!navigator.clipboard) throw new Error('Copie indisponible dans ce navigateur.');
+      await navigator.clipboard.writeText(url);
+      flash('Lien partageable copié');
+    } catch (e) { flash(e instanceof Error ? e.message : 'Copie impossible.'); }
   };
 
   return (

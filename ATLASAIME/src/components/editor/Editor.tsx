@@ -6,7 +6,7 @@ import { MEDIA_FRAGMENTS } from '../../data/media';
 import { repoToFragment } from '../../data/repos';
 import { LAYOUTS, LAYOUT_MAP, SUPPORTS, SUPPORT_MAP, cascadeRect, computeGeometry, gridToFreeRects } from '../../data/layouts';
 import { defaultSettings, makeTextFragment, TEXT_TEMPLATES, uid } from '../../data/templates';
-import { readOnlyUrl, saveProject, useMediaQuery, useProjectHistory } from '../../hooks/useAtlas';
+import { getStorageError, readOnlyUrl, saveProject, useMediaQuery, useProjectHistory } from '../../hooks/useAtlas';
 import type { GithubState } from '../../hooks/useAtlas';
 import { TopBar, BottomBar } from './EditorChrome';
 import { Library } from './Library';
@@ -186,7 +186,8 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
   const [replayKey, setReplayKey] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [layoutPicker, setLayoutPicker] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(() => Date.now());
+  const [lastSavedAt, setLastSavedAt] = useState(() => initialProject.updatedAt);
+  const [saveError, setSaveError] = useState(getStorageError);
   const [blockDialog, setBlockDialog] = useState<{ mode: 'remix' | 'design'; cellId: string } | null>(null);
   const [contentFocusKey, setContentFocusKey] = useState(0);
   const toastTimer = useRef<number | undefined>(undefined);
@@ -213,7 +214,8 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
     if (readOnly) return;
     const t = window.setTimeout(() => {
       saveProject(project);
-      setLastSavedAt(Date.now());
+      setSaveError(getStorageError());
+      if (!getStorageError()) setLastSavedAt(Date.now());
       savedRef.current(project);
     }, 500);
     return () => window.clearTimeout(t);
@@ -687,9 +689,12 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
     });
   };
 
-  const copyLink = () => {
-    void navigator.clipboard?.writeText(readOnlyUrl(project));
-    showToast('Lien de lecture seule copié');
+  const copyLink = async () => {
+    try {
+      if (!navigator.clipboard) throw new Error('Copie indisponible.');
+      await navigator.clipboard.writeText(readOnlyUrl(project));
+      showToast('Lien de lecture seule copié');
+    } catch { showToast('Copie impossible. Ouvrez Partager pour sélectionner le lien.'); }
   };
 
   /* ---------- raccourcis ---------- */
@@ -928,6 +933,7 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
         onExport={() => setModal('export')}
         onCopyLink={copyLink}
         lastSavedAt={lastSavedAt}
+        saveError={saveError}
         historyCount={historyCount}
       />
 

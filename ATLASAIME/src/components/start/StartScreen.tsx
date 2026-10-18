@@ -1,3 +1,4 @@
+import { BackupTools } from './BackupTools';
 import { repoPreview } from '../../data/repoPreview';
 import { RepoPreview } from '../ui/RepoPreview';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ import { DomainStitch } from './DomainStitch';
 import { WorkspaceNav } from '../ui/WorkspaceNav';
 
 export interface StartScreenProps {
+  onRestored?: (projects: Project[]) => void;
   github: GithubState;
   recent: Project[];
   onOpen: (p: Project) => void;
@@ -127,7 +129,7 @@ function StatusChip({ r }: { r: RepoSnapshot }) {
   );
 }
 
-export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDuplicate, onOpenViewer, onOpenSystems, onOpenDesk }: StartScreenProps) {
+export function StartScreen({ onRestored, github, recent, onOpen, onCreate, onDelete, onDuplicate, onOpenViewer, onOpenSystems, onOpenDesk }: StartScreenProps) {
   const repos = github.repos;
   const stats = useMemo(() => repoStats(repos), [repos]);
   const repoMap = useMemo(() => new Map(repos.map((r) => [r.name, r])), [repos]);
@@ -288,12 +290,13 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
       </section>
 
       <div className="mx-auto max-w-[1400px] space-y-24 px-4 py-20 sm:space-y-32 sm:px-6">
+        {onRestored && <BackupTools onRestored={onRestored} />}
         {/* Reprendre */}
         {recent.length > 0 && (
           <section>
             <SectionHead id="reprendre" eyebrow={`Reprendre · ${recent.length} projet${recent.length > 1 ? 's' : ''}`} title="Vos compositions" />
             <div className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6">
-              {recent.slice(0, 10).map((p, i) => {
+              {recent.map((p, i) => {
                 const posters = p.cells.map((c) => posterFor(c.fragmentId, p, repoMap));
                 return (
                   <Reveal key={p.id} delay={Math.min(i, 6) * 50} className="w-[280px] shrink-0 snap-start sm:w-[320px]">

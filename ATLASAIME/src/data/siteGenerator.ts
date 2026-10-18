@@ -105,7 +105,7 @@ export function generateSiteFromBrief(brief: Brief, answers: Record<string, stri
     name,
     typeId,
     layoutId: brief.layoutId,
-    supportId: brief.supportId,
+    supportId: answers.support?.trim() ? (/mobile|téléphone|telephone/i.test(answers.support) ? 'mobile' : /tablette|tablet/i.test(answers.support) ? 'tablet' : /a4|impression/i.test(answers.support) ? 'a4' : 'desktop') : brief.supportId,
     explicit: sourceIds,
     repos,
   });
