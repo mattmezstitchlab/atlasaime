@@ -1,3 +1,4 @@
+import { VisualMediaLibrary } from './VisualMediaLibrary';
 import { SectionCanvas, insertDocumentSection, moveSection, sectionTitle } from './SectionCanvas';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -779,8 +780,9 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
   ];
 
   const library = (
-    <div className="flex h-full min-h-[400px] flex-col [&>aside]:w-full">
+    <div className="flex h-full min-h-[400px] flex-col overflow-y-auto [&>aside]:min-h-[500px] [&>aside]:shrink-0 [&>aside]:w-full">
     <p role="status" className="border-b bg-blue-50 p-3 text-xs text-blue-900">{destination ? `Destination : section ${project.cells.findIndex(c => c.id === destination) + 1}` : selectedCell ? `Remplacer dans la section ${project.cells.findIndex(c => c.id === selectedCell.id) + 1}` : 'Choisissez une section dans le plan ou ajoutez une section.'}</p>
+    <VisualMediaLibrary repoNames={github.repos.map(r => r.name)} onInsert={addAndPlace} />
     <Library
       repos={github.repos}
       syncStatus={github.status}

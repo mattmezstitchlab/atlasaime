@@ -317,3 +317,49 @@ test('Unified panel switches between plan and the existing library without a sec
   assert.match(library, /LIBRARY_CONTENT/);
   assert.doesNotMatch(library, /Plan de la présentation/);
 });
+
+test('Local media survive database reopening and identical files deduplicate', async () => {
+  const { indexedDB } = await import('fake-indexeddb'); globalThis.indexedDB = indexedDB;
+  const lib = await server.ssrLoadModule('/src/data/mediaLibrary.ts');
+  const file = new File(['pixels'], 'photo.png', { type: 'image/png' });
+  const first = await lib.importLocalMedia(file);
+  await lib.importLocalMedia(file);
+  const loaded = await lib.loadLibraryMedia();
+  assert.equal(loaded.length, 1);
+  assert.equal(loaded[0].id, first.id);
+  assert.equal(await loaded[0].blob.text(), 'pixels');
+  await assert.rejects(() => lib.importLocalMedia(new File(['x'], 'script.js')), /format/);
+  assert.equal(lib.mediaKind('path/track.MP3'), 'audio');
+});
+
+test('GitHub indexing records pinned media URLs, provenance and truncation without secrets', async () => {
+  const lib = await server.ssrLoadModule('/src/data/mediaLibrary.ts');
+  const original = globalThis.fetch; const calls = [];
+  globalThis.fetch = async url => { calls.push(url); return { ok: true, json: async () => calls.length === 1 ? { default_branch: 'main' } : { sha: 'abc123', truncated: true, tree: [{type:'blob',path:'public/photo space.png',size:10},{type:'blob',path:'src/code.ts'},{type:'blob',path:'node_modules/demo.jpg'}] } }; };
+  try {
+    const result = await lib.indexGithubMedia('owner','repo');
+    assert.equal(result.items.length, 1);
+    assert.equal(result.truncated, true);
+    assert.match(result.items[0].url, /abc123\/public\/photo%20space.png/);
+    assert.match(result.items[0].origin, /owner\/repo/);
+  } finally { globalThis.fetch = original; }
+});
+
+test('Visual library offers multiple imports, source/type filters and deliberate insertion', async () => {
+  const { VisualMediaLibrary } = await server.ssrLoadModule('/src/components/editor/VisualMediaLibrary.tsx');
+  const html = render(VisualMediaLibrary, { repoNames: ['repo'], onInsert: noop });
+  assert.match(html, /multiple/);
+  assert.match(html, /Source des médias/);
+  assert.match(html, /Type de média/);
+  assert.match(html, /Indexer/);
+  assert.match(html, /Aucun accès automatique/);
+});
+
+test('Embedded audio inserted from local media passes backup and reload validation', async () => {
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const { isProject, parseBackup, exportBackup } = await server.ssrLoadModule('/src/data/projectBackup.ts');
+  const p = createProject({name:'Audio',typeId:'archive',fill:'vide'});
+  p.customFragments = [{id:'audio-local',kind:'audio',source:'upload',subtitle:'Mon ordinateur',name:'track.mp3',url:'data:audio/mpeg;base64,dGVzdA=='}];
+  assert.equal(isProject(p), true);
+  assert.equal(parseBackup(exportBackup([p]))[0].customFragments[0].url, p.customFragments[0].url);
+});
