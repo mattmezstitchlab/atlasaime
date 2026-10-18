@@ -2,6 +2,17 @@
 
 Compositeur de pages à partir des projets publics de `mattmezstitchlab` : canevas éditable, visionneuse GitHub/YouTube, design systems, chronologie des projets et bureau documentaire.
 
+## Parcours recentré
+
+- L’accueil privilégie l’exploration/comparaison et la lecture des documents.
+- L’atelier regroupe trois méthodes : idée, choix manuel et domaine. Le brief est traité immédiatement par des règles locales, sans étapes d’agents simulées.
+- Les sources proposées restent à vérifier ; les spécialités sont présentées comme références documentaires.
+- Les estimations sont conservées dans une section secondaire repliée. Les design systems restent accessibles depuis les outils visuels et les vues de projets.
+- Le mode domaine extrait des textes de README, pas des composants fonctionnels. Les textes de liaison utilisent des modèles locaux.
+- Aucun format de sauvegarde n’a changé. Cette étape ne connecte pas les données des applications et n’importe aucun projet externe.
+
+Tests de rendu (sans navigateur) : `node --test tests/workspace.test.mjs`.
+
 ## Lancer localement
 
 Prérequis : Node.js 20 et npm.
