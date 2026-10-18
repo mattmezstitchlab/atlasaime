@@ -1,3 +1,4 @@
+import { repoPreview, mockRepoPreview } from './repoPreview';
 import { REPO_SNAPSHOT, GITHUB_USER, SNAPSHOT_DATE } from './githubSnapshot';
 import type { RepoSnapshot } from './githubSnapshot';
 import type { CollectionId, Fragment } from '../types';
@@ -106,8 +107,8 @@ export function repoToFragment(r: RepoSnapshot): Fragment {
     createdAt: r.createdAt,
     size: r.size,
     collection: collectionOf(r),
-    poster: isSite && r.homepage ? screenshotUrl(r.homepage) : githubOgUrl(r.name),
-    fallbackPoster: r.ogImage || githubOgUrl(r.name),
+    poster: repoPreview(r).url,
+    fallbackPoster: mockRepoPreview(r).url,
   };
 }
 

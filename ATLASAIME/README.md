@@ -2,6 +2,17 @@
 
 Compositeur de pages à partir des projets publics de `mattmezstitchlab` : canevas éditable, visionneuse GitHub/YouTube, design systems, chronologie des projets et bureau documentaire.
 
+## Parcours recentré
+
+- L’accueil privilégie l’exploration/comparaison et la lecture des documents.
+- L’atelier regroupe trois méthodes : idée, choix manuel et domaine. Le brief est traité immédiatement par des règles locales, sans étapes d’agents simulées.
+- Les sources proposées restent à vérifier ; les spécialités sont présentées comme références documentaires.
+- Les estimations sont conservées dans une section secondaire repliée. Les design systems restent accessibles depuis les outils visuels et les vues de projets.
+- Le mode domaine extrait des textes de README, pas des composants fonctionnels. Les textes de liaison utilisent des modèles locaux.
+- Aucun format de sauvegarde n’a changé. Cette étape ne connecte pas les données des applications et n’importe aucun projet externe.
+
+Tests de rendu (sans navigateur) : `node --test tests/workspace.test.mjs`.
+
 ## Lancer localement
 
 Prérequis : Node.js 20 et npm.
@@ -67,3 +78,9 @@ Aucune variable d'environnement n'est requise. `vercel.json` ajoute des en-tête
 ## Accès Git et déploiement
 
 Dans l'environnement de réalisation, le dossier n'avait pas de répertoire `.git`, de remote GitHub, de configuration Vercel ou de jeton de publication. Les fichiers et vérifications sont préparés, mais aucun push vers votre compte ni déploiement Vercel ne peut être effectué sans ces accès. Le guide ci-dessus permet de les connecter sans intégrer de secret au code.
+
+## Aperçus des dépôts
+
+Les cartes de l’accueil et de la visionneuse distinguent les captures de sites (service externe), les visuels déclarés dans les métadonnées et les maquettes indicatives. Sans site disponible ni visuel déclaré, un schéma SVG local est composé à partir de la catégorie et des métadonnées. Il ne reconstruit pas le code et porte la mention « Maquette — non fonctionnelle ». Si une image distante échoue, la carte revient à cette maquette. Le canevas reçoit également ces posters de remplacement.
+
+Cette étape ne lance aucun dépôt pour en prendre une capture, ne recherche pas automatiquement les images des README et ne publie aucun des projets sources. Une image d’erreur renvoyée avec HTTP 200 par le service externe ne peut pas être détectée comme un échec de chargement. Les captures ou visuels peuvent être anciens ; leur présence ne prouve pas qu’une application fonctionne.

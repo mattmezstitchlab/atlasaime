@@ -1,3 +1,4 @@
+import { RepoPreview } from '../ui/RepoPreview';
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Check, Columns2, ExternalLink, LayoutGrid, Library, Plus, Search, X } from 'lucide-react';
 import type { Project } from '../../types';
@@ -252,7 +253,7 @@ export function Visionneuse({
           <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-3 2xl:grid-cols-4">
             {shown.slice(0, limit).map((item) => (
               <div key={item.id} className="relative">
-                <FeatureCell item={item} groups={featureGroups(item)} selected={selectedId === item.id || picked.includes(item.id)} onSelect={() => setSelectedId(item.id)} />
+                <FeatureCell repo={repos.find((r) => r.name === item.repo)} item={item} groups={featureGroups(item)} selected={selectedId === item.id || picked.includes(item.id)} onSelect={() => setSelectedId(item.id)} />
                 <button
                   type="button"
                   aria-label={picked.includes(item.id) ? 'Retirer de la grille' : 'Ajouter à la grille infinie'}
@@ -281,6 +282,7 @@ export function Visionneuse({
           <aside className="hidden w-[380px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-white lg:flex">
             <Detail
               item={selected}
+              repo={repos.find((r) => r.name === selected.repo)}
               inLibrary={isInLibrary(selected.fragmentId, extras)}
               onClose={() => setSelectedId(null)}
               onImport={() => importItem(selected)}
@@ -296,6 +298,7 @@ export function Visionneuse({
           <div className="max-h-[88vh] w-full overflow-y-auto rounded-t-2xl bg-white" onClick={(e) => e.stopPropagation()}>
             <Detail
               item={selected}
+              repo={repos.find((r) => r.name === selected.repo)}
               inLibrary={isInLibrary(selected.fragmentId, extras)}
               onClose={() => setSelectedId(null)}
               onImport={() => importItem(selected)}
@@ -315,6 +318,7 @@ export function Visionneuse({
 
 function Detail({
   item,
+  repo,
   inLibrary,
   onClose,
   onImport,
@@ -322,6 +326,7 @@ function Detail({
   onSystems,
 }: {
   item: CatalogItem;
+  repo?: RepoSnapshot;
   inLibrary: boolean;
   onClose: () => void;
   onImport: () => void;
@@ -343,6 +348,8 @@ function Detail({
           <iframe title={item.name} src={youtubeEmbed(yt)} className="absolute inset-0 h-full w-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
         ) : canIframe && item.url ? (
           <iframe title={item.name} src={item.url} className="absolute inset-0 h-full w-full border-0" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+        ) : repo ? (
+          <RepoPreview repo={repo} />
         ) : item.poster ? (
           <img src={item.poster} alt="" className="h-full w-full object-cover object-top" />
         ) : null}
