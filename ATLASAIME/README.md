@@ -97,3 +97,13 @@ Cette étape ne lance aucun dépôt pour en prendre une capture, ne recherche pa
 - Le stockage reste `localStorage`, sans compte ni synchronisation et sans verrou multi-onglets. Une base locale de médias (IndexedDB) et des tests d’interaction navigateur sont les prochaines étapes, pas des fonctions déjà livrées.
 
 Les commandes de contrôle TypeScript, tests, build et audit des dépendances ont été exécutées localement ; la CI distante reste à installer. Recette navigateur à effectuer avant fusion : importer image/PDF/vidéo, exporter, recharger, restaurer sur un autre profil, tester le refus du presse-papiers et du stockage, puis ouvrir un assemblage partagé dans une session vierge.
+
+## Vue simple
+
+L’entrée principale est désormais le catalogue des projets avec recherche, domaine et sélection. La navigation présente Projets, Documents et Mes compositions. Les trois dernières compositions sont proposées sur l’accueil ; toutes restent accessibles dans Mes compositions, avec duplication et suppression confirmée.
+
+Le parcours de création est : sélectionner des projets, choisir Page / Grille / Diaporama, nommer, puis ajuster dans l’atelier. Une présentation vide reste possible. La comparaison des projets sélectionnés conserve la visionneuse existante. La fiche de chaque carte donne accès à la préparation d’une présentation.
+
+L’atelier démarre en mode simple : bibliothèque fermée, réglages simples sur grand écran (nom, trois formats, texte du bloc, remplacement et ordre). Les réglages avancés réactivent l’inspecteur complet, le graphe, les supports, le recadrage et l’assistant local. Les raccourcis et menus contextuels historiques restent disponibles : il ne s’agit pas d’une restriction de permissions. Sur petit écran, les panneaux restent accessibles par leurs boutons.
+
+Les anciens parcours (brief, domaine, modèles, propositions de fusion et estimations) sont conservés dans Outils avancés avec retour à la vue simple. Aucun format de sauvegarde n’a changé dans ce lot. Cette simplification est ergonomique : tous les modules avancés sont encore dans le bundle, ce n’est pas encore une optimisation du poids de chargement.

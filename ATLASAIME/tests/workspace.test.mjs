@@ -10,19 +10,18 @@ const { renderToStaticMarkup } = await import('react-dom/server');
 const render = (Component, props = {}) => renderToStaticMarkup(createElement(Component, props));
 const noop = () => {};
 
-test('Accueil centers exploration and keeps estimates secondary', async () => {
+test('Home prioritizes the searchable project catalogue and hides advanced tools', async () => {
   const { StartScreen } = await server.ssrLoadModule('/src/components/start/StartScreen.tsx');
   const html = render(StartScreen, {
     github: { repos: [], status: 'snapshot', syncedAt: '2026-10-18', sync: noop }, recent: [],
     onOpen: noop, onCreate: noop, onDelete: noop, onDuplicate: noop,
     onOpenViewer: noop, onOpenSystems: noop, onOpenDesk: noop,
   });
-  assert.match(html, /Explorer et comparer/);
-  assert.match(html, /Lire les documents/);
-  assert.match(html, /Méthode de composition/);
-  assert.match(html, /<details[^>]*><summary[^>]*>Suivi documentaire/);
-  assert.doesNotMatch(html, /Nom du projet/); // manual controls are not invisibly focusable
-  assert.doesNotMatch(html, /Générer les pages du site/);
+  assert.match(html, /Catalogue des projets/);
+  assert.match(html, /Rechercher un projet/);
+  assert.match(html, /Créer une composition/);
+  assert.match(html, /<details[^>]*><summary[^>]*>Outils avancés/);
+  assert.doesNotMatch(html, /Méthode de composition|Estimation|Lecture du brief/);
 });
 
 test('Brief composer clearly states local behavior without staged agent reactions', async () => {
@@ -45,7 +44,7 @@ test('Primary navigation prioritizes projects and documents over visual tools', 
   const { WorkspaceNav } = await server.ssrLoadModule('/src/components/ui/WorkspaceNav.tsx');
   const html = render(WorkspaceNav, { active: 'home', onNavigate: noop });
   assert.match(html, /aria-label="Projets"/);
-  assert.match(html, /aria-label="Bureau"/);
+  assert.match(html, /aria-label="Documents"/);
   assert.doesNotMatch(html, /aria-label="Design"/);
 });
 
@@ -213,4 +212,40 @@ test('Malformed settings and unreadable existing storage are not silently overwr
   h.saveProject(p);
   assert.equal(value, corrupt);
   assert.match(h.getStorageError(), /impossible/);
+});
+
+test('Navigation exposes exactly three named destinations', async () => {
+  const { WorkspaceNav } = await server.ssrLoadModule('/src/components/ui/WorkspaceNav.tsx');
+  const html = render(WorkspaceNav, { active: 'home', onNavigate: noop });
+  assert.equal((html.match(/<button/g) ?? []).length, 3);
+  for (const label of ['Projets','Documents','Mes compositions']) assert.ok(html.includes(`aria-label="${label}"`));
+});
+
+test('Composition view keeps all saved work and hides the project catalogue', async () => {
+  const { StartScreen, SIMPLE_FORMATS } = await server.ssrLoadModule('/src/components/start/StartScreen.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const recent = Array.from({ length: 30 }, (_, i) => createProject({ name: `Unique composition ${i}`, typeId: 'blank', fill: 'vide' }));
+  const html = render(StartScreen, { initialTab: 'compositions', recent, github: { repos: [], status: 'snapshot', sync: noop }, onOpen: noop, onCreate: noop, onOpenViewer: noop, onOpenDesk: noop });
+  assert.match(html, /Unique composition 29/);
+  assert.doesNotMatch(html, /Catalogue des projets/);
+  assert.deepEqual(SIMPLE_FORMATS.map(f => f.name), ['Page','Grille','Diaporama']);
+});
+
+test('Catalogue cards keep opening and selection actions with a project sheet', async () => {
+  const { StartScreen } = await server.ssrLoadModule('/src/components/start/StartScreen.tsx');
+  const html = render(StartScreen, { recent: [], github: { repos: [sampleRepo], status: 'snapshot', sync: noop }, onOpen: noop, onCreate: noop, onOpenViewer: noop, onOpenDesk: noop });
+  assert.match(html, /MONDEMARIAGE/);
+  assert.match(html, /type="checkbox"/);
+  assert.match(html, /Ouvrir le code/);
+  assert.match(html, /Fiche du projet/);
+  assert.doesNotMatch(html, /> Étude</);
+});
+
+test('Editor starts in simple mode without agent, graph or animation controls', async () => {
+  const { Editor } = await server.ssrLoadModule('/src/components/editor/Editor.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const html = render(Editor, { initialProject: createProject({ name: 'Simple editor', typeId: 'archive', layoutId: 'editorial', fill: 'vide' }), github: { repos: [], status: 'snapshot' }, projectsCount: 1, onExit: noop, onSaved: noop, onDuplicate: noop });
+  assert.match(html, /Réglages avancés/);
+  assert.doesNotMatch(html, />Graphe<|> Graphe<|INSPECTEUR|Réactions locales/);
+  assert.match(html, /Ajouter/);
 });

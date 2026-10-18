@@ -177,7 +177,8 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
   const [manualPct, setManualPct] = useState(100);
   const isLg = useMediaQuery('(min-width: 1024px)');
   const isXl = useMediaQuery('(min-width: 1280px)');
-  const [leftOpen, setLeftOpen] = useState(isLg);
+  const [advanced, setAdvanced] = useState(false);
+  const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(isXl);
   const [modal, setModal] = useState<null | 'search' | 'replace' | 'add' | 'share' | 'export' | 'crop'>(null);
   const [addTab, setAddTab] = useState<AddTab>('url');
@@ -200,7 +201,7 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
   useEffect(() => {
     savedRef.current = onSaved;
   });
-  useEffect(() => setLeftOpen(isLg), [isLg]);
+  useEffect(() => { if (advanced) setLeftOpen(isLg); }, [isLg, advanced]);
   useEffect(() => setRightOpen(isXl), [isXl]);
   useEffect(() => () => stopTone(), []);
 
@@ -792,7 +793,23 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
     />
   );
 
-  const inspector = (
+  const simpleInspector = <aside aria-label="Réglages simples" className="h-full w-[280px] shrink-0 overflow-y-auto border-l border-gray-200 bg-white p-4 text-sm">
+    <h2 className="mb-4 font-semibold">{selectedCell ? 'Modifier le bloc' : 'Présentation'}</h2>
+    {!selectedCell ? <>
+      <label>Nom<input aria-label="Nom de la composition" className="my-2 w-full rounded border p-2" value={project.name} onChange={e => update(p => ({ ...p, name: e.target.value }), 'name')} /></label>
+      <div className="my-3 flex flex-wrap gap-2">{([['editorial','Page'],['bento','Grille'],['slides','Diaporama']] as const).map(([id,label]) => <button key={id} type="button" aria-pressed={project.layoutId === id} className="rounded border px-2 py-1" onClick={() => { setLayout(id); setSupport(id === 'slides' ? 'slide' : 'desktop'); }}>{label}</button>)}</div>
+      <p className="text-xs text-gray-500">Cliquez sur un bloc pour modifier son texte, le remplacer ou changer son ordre.</p>
+    </> : <>
+      {selectedFragment?.text && !selectedCell.settings.locks.content && <><label>Titre<input className="my-2 w-full rounded border p-2" value={selectedFragment.text.title} onChange={e => updateFragment(selectedFragment.id, { text: { ...selectedFragment.text!, title: e.target.value } })} /></label><label>Texte<textarea className="my-2 w-full rounded border p-2" value={selectedFragment.text.body ?? ''} onChange={e => updateFragment(selectedFragment.id, { text: { ...selectedFragment.text!, body: e.target.value } })} /></label></>}
+      <button type="button" className="my-2 block underline" disabled={selectedCell.settings.locks.content} onClick={() => setModal('replace')}>Remplacer le contenu</button>
+      <div className="my-3 flex gap-3">{([-1,1] as const).map(delta => <button key={delta} type="button" disabled={selectedCell.settings.locks.position} className="rounded border px-2 py-1 disabled:opacity-40" onClick={() => update(p => { const cells = [...p.cells]; const i = cells.findIndex(c => c.id === selectedCell.id); const j = i + delta; if (i < 0 || j < 0 || j >= cells.length || cells[i].settings.locks.position || cells[j].settings.locks.position) return p; [cells[i],cells[j]] = [cells[j],cells[i]]; return { ...p, cells }; })}>{delta < 0 ? 'Monter' : 'Descendre'}</button>)}</div>
+      <button type="button" className="my-2 text-red-700 underline disabled:opacity-40" disabled={selectedCell.settings.locks.position || selectedCell.settings.locks.content} onClick={() => removeCell(selectedCell.id)}>Supprimer le bloc</button>
+      <button type="button" className="my-3 block underline" onClick={() => setSelectedCellId(null)}>Réglages de la présentation</button>
+    </>}
+    <button type="button" className="mt-5 underline" onClick={() => setModal('add')}>Ajouter un bloc</button>
+    <button type="button" className="mt-4 block text-xs underline" onClick={() => setAdvanced(true)}>Tous les réglages avancés</button>
+  </aside>;
+  const fullInspector = (
     <Inspector
       project={project}
       cell={selectedCell}
@@ -817,6 +834,8 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
     />
   );
 
+  const inspector = advanced ? fullInspector : simpleInspector;
+
   if (readOnly) {
     return (
       <PresentOverlay
@@ -837,6 +856,8 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#f5f5f7] text-gray-900">
       <TopBar
+        advanced={advanced}
+        onToggleAdvanced={() => { setAdvanced(v => !v); setView('composition'); setTool('select'); setLayoutPicker(false); setLeftOpen(false); }}
         project={project}
         projectsCount={projectsCount}
         fragmentsCount={fragments.size}
@@ -873,6 +894,7 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
       <div className="relative flex min-h-0 flex-1">
         {leftOpen && (isLg ? library : <Drawer side="left" onClose={() => setLeftOpen(false)}>{library}</Drawer>)}
         <Canvas
+          advanced={advanced}
           project={project}
           fragments={fragments}
           mode={mode}
