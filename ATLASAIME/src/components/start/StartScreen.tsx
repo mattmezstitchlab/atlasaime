@@ -36,7 +36,7 @@ export function StartScreen(props: StartScreenProps & { initialTab?: 'projects' 
   if (compare) return <CompareView items={buildCatalog(github.repos.filter(r => selected.includes(r.name)), [], [], []).filter(item => item.repo && selected.includes(item.repo))} onClose={() => setCompare(false)} />;
   return <div className="h-screen overflow-y-auto bg-[#f5f5f7] text-gray-900">
     <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 py-3 sm:px-8">
-      <a href="/portfolio" className="font-semibold" title="Voir le portfolio public">ATLAS × AIME ↗</a>
+      <a href="/" className="font-semibold" title="Voir le portfolio public">ATLAS × AIME ↗</a>
       <WorkspaceNav active={compositions ? 'viewer' : 'home'} onNavigate={page => { if (page === 'desk') onOpenDesk(); else if (page === 'viewer') onOpenViewer(); else props.onHome?.(); }} />
       <button type="button" onClick={() => setChoosing(true)} className="rounded-xl bg-black px-4 py-2 text-sm text-white">Créer une composition</button>
     </header>

@@ -55,7 +55,7 @@ Une configuration CI séparée est fournie pour installation propre, TypeScript,
 4. Vérifiez ces valeurs : installation `npm ci`, build `npm run build`, sortie `dist`, Node.js 20.
 5. Déployez. Les pushes sur la branche de production créent un déploiement de production; les pull requests obtiennent des preview deployments si l'intégration Git Vercel est activée.
 
-Aucune variable d'environnement n'est requise. `vercel.json` ajoute des en-têtes de sécurité adaptés à cette application statique. Il n'y a volontairement pas de CSP stricte : les compositions affichent des sites tiers, YouTube, des captures externes et Google Fonts dans des iframes. L'application n'a pas besoin d'être elle-même embarquée dans un autre site.
+Le portfolio ne requiert aucune variable ; l’administration nécessite les deux secrets serveur décrits en fin de document. `vercel.json` ajoute des en-têtes de sécurité adaptés à cette application statique. Il n'y a volontairement pas de CSP stricte : les compositions affichent des sites tiers, YouTube, des captures externes et Google Fonts dans des iframes. L'application n'a pas besoin d'être elle-même embarquée dans un autre site.
 
 ### État des audits npm
 
@@ -63,7 +63,7 @@ Le plugin `vite-plugin-singlefile` est mis à jour vers 2.3.4 pour retirer la ch
 
 ## Fonctionnement et limites de production
 
-- **Frontend statique** : aucune API serveur ATLAS, base de données, authentification, secret ou déploiement de code généré n'est connecté.
+- **Architecture** : portfolio statique et atelier local servis derrière une fonction d’authentification serveur. Pas de base métier distante, synchronisation ou déploiement de code généré.
 - **Sauvegarde locale** : compositions, conditions cochées et signaux sont enregistrés dans le navigateur. Ils ne sont pas synchronisés entre appareils et leur suppression du stockage du navigateur est irréversible.
 - **Partage** : le lien en lecture seule embarque la composition dans le fragment `#lecture=…`. Ce n'est ni chiffré ni un contrôle d'accès. Ne partagez pas de données privées ou personnelles dans un lien.
 - **Assistant** : ses règles, sélections de spécialités et actions sur le canevas s'exécutent côté navigateur à partir des documents et projets publics disponibles. Aucun appel à un modèle IA distant n'est effectué. Il sait créer un brouillon de site composé de vrais fragments et de sections texte modifiables ; il ne génère ni backend, ni paiement, ni compte, ni code déployé.
@@ -142,12 +142,35 @@ Tests IndexedDB simulés via fake-indexeddb (dépendance de développement uniqu
 
 ## Portfolio public
 
-`/portfolio` présente un catalogue public visuel distinct de l’atelier (`/`). Il utilise uniquement l’instantané des dépôts publics non vides, jamais les compositions du navigateur, les imports locaux ou IndexedDB. Les grands visuels conservent les badges de provenance (capture externe, visuel ou maquette indicative). Aucun visuel du site de référence n’est copié.
+`/portfolio` et `/` présentent un catalogue public visuel distinct de l’atelier protégé (`/admin`). Il utilise uniquement l’instantané des dépôts publics non vides, jamais les compositions du navigateur, les imports locaux ou IndexedDB. Les grands visuels conservent les badges de provenance (capture externe, visuel ou maquette indicative). Aucun visuel du site de référence n’est copié.
 
 Les concepts des projets principaux sont rédigés depuis leurs titres/descriptions publics ; les autres utilisent leurs métadonnées ou un texte explicite « concept à documenter ». Ce ne sont ni des preuves de fonctionnalités ni des déclarations de maturité. La sélection et les textes sont éditables dans `src/data/portfolio.ts`, avec recherche et filtre de domaine. L’index est un instantané, pas une publication automatique des nouveaux dépôts.
 
-Route `/portfolio` et `/portfolio/` réécrite vers l’entrée SPA. Le portfolio ne constitue pas une protection d’accès pour l’atelier, qui reste accessible. Page cliente : titre actualisé côté navigateur ; métadonnées sociales/prérendu SEO spécifiques à améliorer dans une étape distincte. Pas de copie de biographie, coordonnées ou références clients du site d’inspiration. Vérifier visuellement sur mobile/ordinateur et valider les descriptifs avant publication.
+Route `/portfolio` et `/portfolio/` réécrite vers l’entrée SPA. La protection de l’atelier est assurée par la route serveur `/admin`, pas par le masquage de ses liens. Page cliente : titre actualisé côté navigateur ; métadonnées sociales/prérendu SEO spécifiques à améliorer dans une étape distincte. Pas de copie de biographie, coordonnées ou références clients du site d’inspiration. Vérifier visuellement sur mobile/ordinateur et valider les descriptifs avant publication.
 
 ### Mosaïque et défilement
 
 Le portfolio possède un conteneur `100dvh` avec défilement vertical : il ne dépend plus du body verrouillé par l’atelier. Le retour en haut cible ce conteneur. Galerie en trois colonnes sur ordinateur, deux sur tablette et une sur téléphone, avec titre/catégorie avant le visuel, mode liste et thème clair/sombre. Les concepts s’ouvrent dans une boîte de dialogue native (fermeture par bouton ou Échap). La direction est inspirée des captures fournies, sans reprendre leurs images ou projets. Recette navigateur requise pour scroll, focus/fermeture de la fenêtre et responsive.
+
+## Portfolio public et administration protégée (remplace l’accès atelier à la racine)
+
+Le portfolio est servi sur `/` et `/portfolio`, sans liens vers GitHub ni vers l’atelier. Les dépôts sources déjà publics restent publics chez GitHub. L’administration est accessible directement sur `/admin` et `/admin/…` via la fonction Node `api/admin.js`. L’atelier n’est plus dans le build statique public ; son HTML autonome est produit dans `.admin-build/admin.html`, inclus uniquement dans la fonction. La build échoue si l’entrée publique contient les marqueurs de l’atelier ou des chunks JS publics résiduels. Le code source du dépôt reste public : cette séparation n’est pas une mesure d’obfuscation du code.
+
+### Installation obligatoire par le propriétaire
+
+Dans Vercel → projet Atlasaime → Settings → Environment Variables :
+
+- `ATLAS_ADMIN_PASSWORD` : un mot de passe aléatoire unique d’au moins 24 caractères, créé dans un gestionnaire de mots de passe.
+- `ATLAS_SESSION_SECRET` : une autre valeur aléatoire indépendante d’au moins 32 caractères, créée dans le gestionnaire.
+
+Les ajouter comme variables serveur sensibles, sans préfixe `VITE_`, pour Production et pour Preview seulement si l’administration doit aussi y être testée. Ne pas transmettre les valeurs à un assistant, ne pas les committer ni les mettre dans un fichier versionné. Redéployer après configuration. Sans les deux valeurs valides, le serveur répond 503 et l’accès reste fermé ; aucun mot de passe par défaut ou contournement n’existe. Aucun secret n’a été configuré automatiquement par cette PR.
+
+Le formulaire de connexion POST vérifie l’origine, limite la taille des entrées et compare une empreinte SHA-256 en temps constant. Les sessions sont signées HMAC avec aléa et expiration de huit heures ; cookie `__Host-` Secure, HttpOnly et SameSite=Strict. Les réponses privées sont non mises en cache et non indexables. La rotation du mot de passe ou de la clé invalide les sessions. Déconnexion efface le cookie de ce navigateur ; elle ne révoque pas un éventuel cookie déjà volé avant son expiration (rotation pour révocation globale).
+
+Une limite de cinq tentatives par quinze minutes et un délai sont appliqués **par instance serveur uniquement**. Ce n’est pas une protection distribuée contre les attaques : avant une exposition sensible, configurer une règle WAF/rate limit persistante ou remplacer ce login mono-propriétaire par un fournisseur d’identité avec MFA. Le mot de passe doit être généré aléatoirement, pas une phrase prévisible. Il n’y a ni compte multi-utilisateurs, ni récupération par email, ni MFA dans cette étape.
+
+Les anciennes compositions et IndexedDB restent sur la même origine, sans migration. Les liens lecture seule de l’atelier sont désormais derrière `/admin` et nécessitent une connexion ; le portfolio public reste indépendant. L’authentification protège l’accès HTTP à l’atelier, pas un appareil déjà déverrouillé ou les exports téléchargés localement. Les builds preview et production ont des stockages navigateur séparés.
+
+### Tests et développement
+
+Exécuter `node --test tests/*.test.mjs`, TypeScript, puis `npm run build`. `npm run dev` est un serveur de développement local, **pas** une protection d’accès : ne pas le rendre public. Les routes serveur nécessitent l’environnement de fonctions Vercel ; `npm run preview` sert seulement le portfolio statique. Valider le déploiement réel avant fusion : `/` et `/portfolio`, accès direct anonyme `/admin` et `/api/admin`, refus sans secrets, connexion, déconnexion, expiration, absence de `/admin.html` public et absence de cache privé. Pas de test navigateur ni audit de sécurité externe effectué.

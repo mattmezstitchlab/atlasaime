@@ -5,6 +5,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/admin",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/api/admin"
+    },
+    {
       "source": "/portfolio",
       "destination": "/index.html"
     },
@@ -35,5 +43,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/admin.js": {
+      "includeFiles": ".admin-build/admin.html"
+    }
+  }
 }

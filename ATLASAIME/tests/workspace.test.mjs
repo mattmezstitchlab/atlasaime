@@ -383,7 +383,7 @@ test('Public portfolio describes all public nonempty projects without exposing l
     assert.match(html, /Liste/);
     assert.match(html, /<dialog/);
     assert.match(html, /Rechercher un projet/);
-    assert.doesNotMatch(html, /Restaurer une sauvegarde|Mon ordinateur|type="file"/);
+    assert.doesNotMatch(html, /Restaurer une sauvegarde|Mon ordinateur|type="file"|github\.com|Sources ↗|Atelier ↗/);
   } finally { globalThis.localStorage = original; }
 });
 
@@ -394,6 +394,7 @@ test('Public portfolio route has explicit SPA rewrites and preserves security he
   assert.equal(config.rewrites.find(r => r.source === '/portfolio/').destination, '/index.html');
   assert.ok(config.headers[0].headers.some(h => h.key === 'X-Content-Type-Options'));
   assert.equal(config.headers[0].rewrites, undefined);
+  assert.equal(config.rewrites.find(r => r.source === '/admin').destination, '/api/admin');
 });
 
 test('Portfolio owns its scroll instead of relying on the locked workspace body', async () => {
