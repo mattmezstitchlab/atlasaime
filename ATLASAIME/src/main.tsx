@@ -1,3 +1,4 @@
+import { PublicPortfolio } from './components/portfolio/PublicPortfolio';
 import { StorageNotice } from './components/StorageNotice';
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -11,8 +12,7 @@ createRoot(document.getElementById("root")!).render(
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
       window.location.reload();
     }}>
-      <App />
-      <StorageNotice />
+      {window.location.pathname.replace(/\/$/, '') === '/portfolio' ? <PublicPortfolio /> : <><App /><StorageNotice /></>}
     </ErrorBoundary>
   </StrictMode>
 );

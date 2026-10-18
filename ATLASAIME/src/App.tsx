@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import type { CollectionId, Project } from './types';
 import { StartScreen } from './components/start/StartScreen';
 import { Editor } from './components/editor/Editor';
-import { Visionneuse } from './components/viewer/Visionneuse';
 import { DesignSystems } from './components/viewer/DesignSystems';
 import { DocumentDesk } from './components/start/DocumentDesk';
 import { decodeProject, loadProjects, removeProject, saveProject, useGithubRepos } from './hooks/useAtlas';
 import { COLLECTIONS } from './data/repos';
-import { createProject, uid } from './data/templates';
+import { uid } from './data/templates';
 import { buildStitchProject, decodeAssemblage, resolveAssembly, type LinkBand, type Section } from './data/stitch';
 import { AssemblageView } from './components/start/AssemblageView';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -89,34 +88,6 @@ export function App() {
     );
   }
 
-  if (screen === 'viewer') {
-    return (
-      <Visionneuse
-        repos={github.repos}
-        projects={recent}
-        onBack={() => { setCurrent(null); setScreen('home'); }}
-        onOpenSystems={(id) => {
-          setSystemId(id ?? null);
-          setScreen('systems');
-        }}
-        onOpenDesk={() => setScreen('desk')}
-        onCompose={(ids) => {
-          const p = createProject({
-            name: 'Grille infinie',
-            typeId: 'archive',
-            layoutId: 'infinite',
-            supportId: 'desktop',
-            explicit: ids,
-            repos: github.repos,
-          });
-          setRecent(saveProject(p));
-          setCurrent(p);
-          setScreen('home');
-        }}
-      />
-    );
-  }
-
   if (screen === 'systems') {
     return <DesignSystems repos={github.repos} initialId={systemId} onBack={() => { setCurrent(null); setScreen('home'); }} onOpenViewer={() => setScreen('viewer')} onOpenDesk={() => setScreen('desk')} />;
   }
@@ -125,7 +96,7 @@ export function App() {
     return <DocumentDesk onBack={() => { setCurrent(null); setScreen('home'); }} onOpenViewer={() => setScreen('viewer')} onOpenSystems={() => { setSystemId(null); setScreen('systems'); }} />;
   }
 
-  if (current) {
+  if (current && screen === 'home') {
     return (
       <ErrorBoundary
         key={`boundary-${current.id}`}
@@ -167,10 +138,13 @@ export function App() {
         github={github}
         recent={recent}
         onRestored={setRecent}
-        onOpen={setCurrent}
+        initialTab={screen === 'viewer' ? 'compositions' : 'projects'}
+        onHome={() => { setCurrent(null); setScreen('home'); }}
+        onOpen={p => { setCurrent(p); setScreen('home'); }}
         onCreate={(p) => {
           setRecent(saveProject(p));
           setCurrent(p);
+          setScreen('home');
         }}
         onDelete={(id) => setRecent(removeProject(id))}
         onDuplicate={(p) => {
