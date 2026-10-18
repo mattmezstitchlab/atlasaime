@@ -374,10 +374,14 @@ test('Public portfolio describes all public nonempty projects without exposing l
   globalThis.localStorage = { getItem: () => { throw new Error('No private storage should be read'); } };
   try {
     const html = render(PublicPortfolio);
-    assert.match(html, /Des idées/);
+    assert.match(html, /folio-mosaic/);
     assert.match(html, /Projets &amp; explorations/);
     assert.match(html, /RELIA/);
-    assert.match(html, /liens documentés/);
+    assert.match(html, /height:100dvh;overflow-y:auto/);
+    assert.match(html, /Affichage des projets/);
+    assert.match(html, /Mosaïque/);
+    assert.match(html, /Liste/);
+    assert.match(html, /<dialog/);
     assert.match(html, /Rechercher un projet/);
     assert.doesNotMatch(html, /Restaurer une sauvegarde|Mon ordinateur|type="file"/);
   } finally { globalThis.localStorage = original; }
@@ -390,4 +394,15 @@ test('Public portfolio route has explicit SPA rewrites and preserves security he
   assert.equal(config.rewrites.find(r => r.source === '/portfolio/').destination, '/index.html');
   assert.ok(config.headers[0].headers.some(h => h.key === 'X-Content-Type-Options'));
   assert.equal(config.headers[0].rewrites, undefined);
+});
+
+test('Portfolio owns its scroll instead of relying on the locked workspace body', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const css = await readFile(new URL('../src/components/portfolio/portfolio.css', import.meta.url), 'utf8');
+  assert.match(css, /repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.folio-dialog::backdrop/);
+  const { PublicPortfolio } = await server.ssrLoadModule('/src/components/portfolio/PublicPortfolio.tsx');
+  const html = render(PublicPortfolio);
+  assert.match(html, /height:100dvh;overflow-y:auto/);
+  assert.match(html, /Découvrir le concept de RELIA/);
 });
