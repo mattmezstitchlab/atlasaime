@@ -1,4 +1,4 @@
-import { BookOpen, Grid2X2, Home, Palette } from 'lucide-react';
+import { BookOpen, Grid2X2, Home } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export type WorkspacePage = 'home' | 'viewer' | 'systems' | 'desk';
@@ -15,7 +15,6 @@ export function WorkspaceNav({
   const links = [
     { id: 'home' as const, label: 'Accueil', icon: Home },
     { id: 'viewer' as const, label: 'Projets', icon: Grid2X2 },
-    { id: 'systems' as const, label: 'Design', icon: Palette },
     { id: 'desk' as const, label: 'Bureau', icon: BookOpen },
   ];
   return (

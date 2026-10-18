@@ -179,6 +179,7 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
   const [status, setStatus] = useState<'tous' | 'live' | 'code'>('tous');
   const [sort, setSort] = useState<'recent' | 'az'>('recent');
   const [limit, setLimit] = useState(12);
+  const [composerMode, setComposerMode] = useState<'brief' | 'manual' | 'domain'>('brief');
   const [wizardVisible, setWizardVisible] = useState(false);
   const wizardRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -207,11 +208,11 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
 
   useEffect(() => {
     const el = wizardRef.current;
-    if (!el) return;
+    if (!el) { setWizardVisible(false); return; }
     const io = new IntersectionObserver(([e]) => setWizardVisible(e.isIntersecting), { threshold: 0.05 });
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [composerMode]);
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -310,7 +311,17 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
         </div>
       </header>
 
-      <AimeHero repos={repos} onCreate={onCreate} onExplore={() => scrollTo('nouveau')} />
+      <section className="mx-auto max-w-[1400px] px-5 pb-4 pt-16 sm:px-6">
+        <p className="text-xs uppercase tracking-widest text-gray-500">ATLAS × AIME · vos projets, leurs liens</p>
+        <h1 className="mt-5 max-w-4xl font-display text-5xl leading-tight sm:text-7xl">Retrouver. Comprendre. <em className="text-[#0071e3]">Relier.</em></h1>
+        <p className="mt-5 max-w-2xl text-base text-gray-500">Un point de repère pour explorer vos créations, retrouver leurs sources et préparer leurs rapprochements. Relier des projets ne veut pas forcément dire fusionner leur code.</p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <button type="button" onClick={onOpenViewer} className="rounded-xl bg-black px-5 py-3 text-sm font-medium text-white">Explorer et comparer</button>
+          <button type="button" onClick={onOpenDesk} className="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm">Lire les documents</button>
+          <button type="button" onClick={() => scrollTo('composer')} className="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm">Préparer une composition</button>
+        </div>
+        <p className="mt-4 text-xs text-gray-500">Sauvegarde dans ce navigateur uniquement · aucune connexion de données entre applications.</p>
+      </section>
 
       <div className="mx-auto max-w-[1400px] space-y-24 px-4 py-20 sm:space-y-32 sm:px-6">
         {/* Reprendre */}
@@ -348,13 +359,18 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
           </section>
         )}
 
-        <ProjectTimeline repos={repos} onOpenRepo={onOpenViewer} />
+        <section id="composer" className="scroll-mt-20 space-y-6">
+          <SectionHead id="composer-titre" eyebrow="Atelier · composition visuelle" title="Une seule entrée pour composer" />
+          <p className="text-sm text-gray-500">Choisissez des sources, préparez une maquette puis ajustez-la dans le canevas. L’assemblage ne fusionne ni le code ni les données.</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Méthode de composition">
+            {([['brief', 'Depuis une idée'], ['manual', 'Choix manuel'], ['domain', 'Par domaine']] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={composerMode === id} onClick={() => setComposerMode(id)} className={cn('rounded-full border px-4 py-2 text-sm', composerMode === id ? 'border-black bg-black text-white' : 'border-gray-200 bg-white')}>{label}</button>)}
+          </div>
+          {composerMode === 'brief' && <AimeHero repos={repos} onCreate={onCreate} onExplore={() => setComposerMode('manual')} />}
+          {composerMode === 'domain' && <DomainStitch repos={repos} onCreate={onCreate} />}
+        </section>
 
-        <FusionSection repos={repos} onCreate={onCreate} />
-
-        <DomainStitch repos={repos} onCreate={onCreate} />
-
-        {/* Assistant */}
+        {composerMode === 'manual' && <>
+        {/* Choix manuels */}
         <section ref={wizardRef}>
           <SectionHead id="nouveau" eyebrow="Nouveau projet · 4 choix" title={<>Que voulez-vous <em className="text-gray-400">composer</em> ?</>}>
             <p className="max-w-md text-[14px] leading-relaxed text-gray-500">Chaque choix met à jour l’aperçu : les vignettes montrent vos vrais sites placés dans la composition.</p>
@@ -543,6 +559,10 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
           </div>
         </section>
 
+        </>}
+
+        <FusionSection repos={repos} onCreate={onCreate} />
+
         {/* Dépôts */}
         <section>
           <SectionHead
@@ -683,6 +703,13 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
             </div>
           )}
         </section>
+
+        <details className="rounded-2xl border border-gray-200 bg-white p-5">
+          <summary className="cursor-pointer text-sm font-medium">Suivi documentaire et estimations indicatives · outils secondaires</summary>
+          <p className="my-5 text-sm text-gray-500">Ces indicateurs reposent sur des métadonnées et des déclarations locales, pas sur un audit fonctionnel ou une valeur marchande vérifiée.</p>
+          <ProjectTimeline repos={repos} onOpenRepo={onOpenViewer} />
+        </details>
+        <button type="button" onClick={onOpenSystems} className="text-sm text-gray-500 underline">Outils visuels · consulter les design systems</button>
       </div>
 
       {/* Pied de page */}
@@ -715,7 +742,7 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
       </footer>
 
       {/* Barre de création collante */}
-      <div
+      {composerMode === 'manual' && <div
         className={cn(
           'pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-3 transition-all duration-500',
           wizardVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0',
@@ -745,9 +772,9 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
             Créer <span className="hidden sm:inline">le projet</span> <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
-      </div>
+      </div>}
 
-      {selection.length > 0 && !wizardVisible && (
+      {selection.length > 0 && !(composerMode === 'manual' && wizardVisible) && (
         <div className="animate-pop fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-black py-1.5 pl-4 pr-1.5 text-[12px] text-white shadow-2xl">
           <span>
             {selection.length} dépôt{selection.length > 1 ? 's' : ''} sélectionné{selection.length > 1 ? 's' : ''}
@@ -759,7 +786,8 @@ export function StartScreen({ github, recent, onOpen, onCreate, onDelete, onDupl
             type="button"
             onClick={() => {
               setContent('selection');
-              scrollTo('nouveau');
+              setComposerMode('manual');
+              window.requestAnimationFrame(() => scrollTo('nouveau'));
             }}
             className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 font-medium text-black hover:bg-gray-200"
           >
