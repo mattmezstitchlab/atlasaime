@@ -38,6 +38,9 @@ function ZoomControl({ zoom, onIn, onOut, onFit }: { zoom: number; onIn: () => v
 }
 
 export interface TopBarProps {
+  saveStatus?: string;
+  onPreview?: () => void;
+  previewing?: boolean;
   advanced?: boolean;
   onToggleAdvanced?: () => void;
   project: Project;
@@ -71,7 +74,7 @@ export function TopBar(p: TopBarProps) {
   return (
     <header className="z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-gray-200 bg-white px-2.5 sm:px-4">
       <div className="flex min-w-0 items-center gap-3">
-        <button type="button" onClick={p.onHome} title="Accueil · choisir un projet" className="rounded-md p-1 transition-opacity hover:opacity-70">
+        <button type="button" onClick={p.onOpenViewer ?? p.onHome} title="Mes compositions" className="rounded-md p-1 transition-opacity hover:opacity-70">
           <AtlasLogo />
         </button>
         <div className="hidden h-5 w-px bg-gray-200 sm:block" />
@@ -80,7 +83,7 @@ export function TopBar(p: TopBarProps) {
             <span className="min-w-0">
               <span className="block max-w-[120px] truncate text-[13px] font-semibold text-gray-900 sm:max-w-[220px]">{p.project.name}</span>
               <span className="hidden truncate text-[10px] text-gray-400 sm:block">
-                Workspace · {p.projectsCount} compositions · {p.fragmentsCount} fragments
+                {p.saveStatus ?? `Workspace · ${p.projectsCount} compositions · ${p.fragmentsCount} fragments`}
               </span>
             </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-gray-400 group-hover:text-gray-700" />
@@ -89,8 +92,8 @@ export function TopBar(p: TopBarProps) {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setMenu(false)} />
               <div className="animate-pop absolute left-0 top-full z-50 mt-1.5 w-56 rounded-xl border border-gray-200 bg-white p-1 shadow-xl">
-                <button type="button" onClick={() => { setMenu(false); p.onHome(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-gray-700 hover:bg-gray-50">
-                  <Home className="h-3.5 w-3.5" /> Accueil · tous les projets
+                <button type="button" onClick={() => { setMenu(false); (p.onOpenViewer ?? p.onHome)(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-gray-700 hover:bg-gray-50">
+                  <Home className="h-3.5 w-3.5" /> Mes compositions
                 </button>
                 <button type="button" onClick={() => { setMenu(false); p.onDuplicate(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-gray-700 hover:bg-gray-50">
                   <Copy className="h-3.5 w-3.5" /> Dupliquer ce projet
@@ -117,6 +120,7 @@ export function TopBar(p: TopBarProps) {
       </button>
 
       <div className="flex items-center gap-1.5 lg:gap-2">
+        <button type="button" onClick={p.onPreview} className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs">{p.previewing ? 'Retour à l’édition' : 'Aperçu'}</button>
         <button type="button" onClick={p.onToggleAdvanced} aria-pressed={p.advanced} className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs">{p.advanced ? 'Vue simple' : 'Réglages avancés'}</button>
         {p.advanced && p.onOpenViewer && (
           <button type="button" onClick={p.onOpenViewer} className="hidden rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 lg:block">
@@ -136,7 +140,7 @@ export function TopBar(p: TopBarProps) {
         <button type="button" onClick={p.onOpenSearch} aria-label="Rechercher" className="rounded-md p-1.5 text-gray-600 hover:bg-gray-100 md:hidden">
           <Search className="h-4 w-4" />
         </button>
-        <div className="hidden items-center lg:flex">
+        <div className="flex items-center">
           <button type="button" disabled={!p.canUndo} onClick={p.onUndo} title="Annuler (⌘Z)" className="rounded-md p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-30">
             <Undo2 className="h-4 w-4" />
           </button>

@@ -249,3 +249,55 @@ test('Editor starts in simple mode without agent, graph or animation controls', 
   assert.doesNotMatch(html, />Graphe<|> Graphe<|INSPECTEUR|Réactions locales/);
   assert.match(html, /Ajouter/);
 });
+
+test('Document sections expose synchronized selection and insertion positions', async () => {
+  const { SectionCanvas } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject, makeTextFragment } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Plan test', typeId: 'archive', layoutId: 'editorial', fill: 'vide' });
+  project.cells = project.cells.slice(0,2);
+  const f = makeTextFragment({ title: 'Introduction test', body: 'Corps test' });
+  project.cells[0].fragmentId = f.id;
+  const props = { project, fragments: new Map([[f.id,f]]), selectedId: project.cells[0].id, onSelect: noop, onInsert: noop, onMove: noop, onSettings: noop, preview: false };
+  const html = render(SectionCanvas, props);
+  assert.match(html, /Plan de la présentation/);
+  assert.match(html, /aria-current="true"/);
+  assert.match(html, /Introduction test/);
+  for (const i of [1,2,3]) assert.ok(html.includes(`Ajouter une section à la position ${i}`));
+  const preview = render(SectionCanvas, { ...props, preview: true });
+  assert.doesNotMatch(preview, /Plan de la présentation|Ajouter ici|Modifier|Réglages de la sélection/);
+  assert.match(preview, /Corps test/);
+});
+
+test('Section ordering preserves content and obeys position locks', async () => {
+  const { moveSection } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Move', typeId: 'archive', fill: 'vide' });
+  const first = project.cells[0];
+  const moved = moveSection(project, first.id, 1);
+  assert.equal(moved.cells[1].id, first.id);
+  assert.equal(project.cells[0].id, first.id);
+  assert.equal(moveSection(project, first.id, -1), project);
+  project.cells[1].settings.locks.position = true;
+  assert.equal(moveSection(project, first.id, 1), project);
+});
+
+test('Preview supports grid and sequential slides without losing section content', async () => {
+  const { SectionCanvas } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Formats', typeId: 'archive', layoutId: 'slides', fill: 'vide' });
+  const props = { project, fragments: new Map(), selectedId: null, onSelect: noop, onInsert: noop, onMove: noop, onSettings: noop, preview: true };
+  assert.match(render(SectionCanvas, props), /Précédente/);
+  assert.match(render(SectionCanvas, { ...props, project: { ...project, layoutId: 'bento' } }), /md:grid-cols-2/);
+});
+
+test('Insertion creates an empty selected destination between the original sections', async () => {
+  const { insertDocumentSection } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Insert', typeId: 'archive', fill: 'vide' });
+  const before = project.cells.map(c => c.id);
+  const next = insertDocumentSection(project, 1, 'inserted-section');
+  assert.deepEqual(next.cells.map(c => c.id), [before[0], 'inserted-section', ...before.slice(1)]);
+  assert.equal(next.cells[1].fragmentId, null);
+  assert.equal(project.cells.length + 1, next.cells.length);
+  assert.deepEqual(project.cells.map(c => c.id), before);
+});

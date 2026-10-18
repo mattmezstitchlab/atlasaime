@@ -1,3 +1,4 @@
+import { SectionCanvas, insertDocumentSection, moveSection, sectionTitle } from './SectionCanvas';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, X, Copy } from 'lucide-react';
@@ -59,11 +60,11 @@ const settingsFor = (prev: CellSettings, kind?: FragmentKind): CellSettings => (
   rowSpan: prev.rowSpan,
 });
 
-function Drawer({ side, onClose, children }: { side: 'left' | 'right'; onClose: () => void; children: ReactNode }) {
+function Drawer({ side, onClose, children }: { side: 'left' | 'right' | 'bottom'; onClose: () => void; children: ReactNode }) {
   return (
     <>
       <div className="absolute inset-0 z-30 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
-      <div className={cn('absolute inset-y-0 z-40 shadow-2xl', side === 'left' ? 'left-0 animate-in-left' : 'right-0 animate-in-right')}>{children}</div>
+      <div className={cn('absolute z-40 shadow-2xl', side === 'bottom' ? 'inset-x-0 bottom-0 max-h-[60%] overflow-y-auto rounded-t-2xl bg-white [&>aside]:w-full' : side === 'left' ? 'inset-y-0 left-0 animate-in-left' : 'inset-y-0 right-0 animate-in-right')}>{children}</div>
     </>
   );
 }
@@ -188,6 +189,7 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
   const [playing, setPlaying] = useState(false);
   const [layoutPicker, setLayoutPicker] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(() => initialProject.updatedAt);
+  const [pendingSave, setPendingSave] = useState(false);
   const [saveError, setSaveError] = useState(getStorageError);
   const [blockDialog, setBlockDialog] = useState<{ mode: 'remix' | 'design'; cellId: string } | null>(null);
   const [contentFocusKey, setContentFocusKey] = useState(0);
@@ -213,9 +215,11 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
 
   useEffect(() => {
     if (readOnly) return;
+    setPendingSave(true);
     const t = window.setTimeout(() => {
       saveProject(project);
       setSaveError(getStorageError());
+      setPendingSave(false);
       if (!getStorageError()) setLastSavedAt(Date.now());
       savedRef.current(project);
     }, 500);
@@ -793,20 +797,39 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
     />
   );
 
+  const insertSection = (index: number) => {
+    const id = uid('cell');
+    update(p => insertDocumentSection(p, index, id));
+    setSelectedCellId(id); setAddTab('url'); setModal('add');
+  };
+  const duplicateSection = () => {
+    if (!selectedCell) return;
+    const id = uid('cell');
+    update(p => {
+      const cells = [...p.cells]; const i = cells.findIndex(c => c.id === selectedCell.id);
+      const source = p.customFragments.find(f => f.id === selectedCell.fragmentId);
+      const copy = source ? { ...structuredClone(source), id: uid('fragment') } : null;
+      cells.splice(i + 1, 0, { ...structuredClone(selectedCell), id, fragmentId: copy?.id ?? selectedCell.fragmentId });
+      return { ...p, cells, customFragments: copy ? [...p.customFragments, copy] : p.customFragments };
+    });
+    setSelectedCellId(id);
+  };
   const simpleInspector = <aside aria-label="Réglages simples" className="h-full w-[280px] shrink-0 overflow-y-auto border-l border-gray-200 bg-white p-4 text-sm">
-    <h2 className="mb-4 font-semibold">{selectedCell ? 'Modifier le bloc' : 'Présentation'}</h2>
+    <h2 className="mb-4 font-semibold">{selectedCell ? `Section ${project.cells.findIndex(c => c.id === selectedCell.id) + 1} · ${sectionTitle(selectedCell, 0, fragments)}` : 'Présentation'}</h2>
     {!selectedCell ? <>
       <label>Nom<input aria-label="Nom de la composition" className="my-2 w-full rounded border p-2" value={project.name} onChange={e => update(p => ({ ...p, name: e.target.value }), 'name')} /></label>
       <div className="my-3 flex flex-wrap gap-2">{([['editorial','Page'],['bento','Grille'],['slides','Diaporama']] as const).map(([id,label]) => <button key={id} type="button" aria-pressed={project.layoutId === id} className="rounded border px-2 py-1" onClick={() => { setLayout(id); setSupport(id === 'slides' ? 'slide' : 'desktop'); }}>{label}</button>)}</div>
       <p className="text-xs text-gray-500">Cliquez sur un bloc pour modifier son texte, le remplacer ou changer son ordre.</p>
     </> : <>
+      <label>Légende<input className="my-2 w-full rounded border p-2" value={selectedCell.label ?? ''} disabled={selectedCell.settings.locks.content} onChange={e => updateCell(selectedCell.id, c => ({ ...c, label: e.target.value }), 'label')} /></label>
+      <button type="button" className="my-2 block underline" onClick={duplicateSection}>Dupliquer la section</button>
       {selectedFragment?.text && !selectedCell.settings.locks.content && <><label>Titre<input className="my-2 w-full rounded border p-2" value={selectedFragment.text.title} onChange={e => updateFragment(selectedFragment.id, { text: { ...selectedFragment.text!, title: e.target.value } })} /></label><label>Texte<textarea className="my-2 w-full rounded border p-2" value={selectedFragment.text.body ?? ''} onChange={e => updateFragment(selectedFragment.id, { text: { ...selectedFragment.text!, body: e.target.value } })} /></label></>}
       <button type="button" className="my-2 block underline" disabled={selectedCell.settings.locks.content} onClick={() => setModal('replace')}>Remplacer le contenu</button>
-      <div className="my-3 flex gap-3">{([-1,1] as const).map(delta => <button key={delta} type="button" disabled={selectedCell.settings.locks.position} className="rounded border px-2 py-1 disabled:opacity-40" onClick={() => update(p => { const cells = [...p.cells]; const i = cells.findIndex(c => c.id === selectedCell.id); const j = i + delta; if (i < 0 || j < 0 || j >= cells.length || cells[i].settings.locks.position || cells[j].settings.locks.position) return p; [cells[i],cells[j]] = [cells[j],cells[i]]; return { ...p, cells }; })}>{delta < 0 ? 'Monter' : 'Descendre'}</button>)}</div>
+      <div className="my-3 flex gap-3">{([-1,1] as const).map(delta => <button key={delta} type="button" disabled={selectedCell.settings.locks.position} className="rounded border px-2 py-1 disabled:opacity-40" onClick={() => update(p => moveSection(p, selectedCell.id, delta))}>{delta < 0 ? 'Monter' : 'Descendre'}</button>)}</div>
       <button type="button" className="my-2 text-red-700 underline disabled:opacity-40" disabled={selectedCell.settings.locks.position || selectedCell.settings.locks.content} onClick={() => removeCell(selectedCell.id)}>Supprimer le bloc</button>
       <button type="button" className="my-3 block underline" onClick={() => setSelectedCellId(null)}>Réglages de la présentation</button>
     </>}
-    <button type="button" className="mt-5 underline" onClick={() => setModal('add')}>Ajouter un bloc</button>
+    <button type="button" className="mt-5 underline" onClick={() => insertSection(project.cells.length)}>Ajouter un bloc</button>
     <button type="button" className="mt-4 block text-xs underline" onClick={() => setAdvanced(true)}>Tous les réglages avancés</button>
   </aside>;
   const fullInspector = (
@@ -836,27 +859,23 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
 
   const inspector = advanced ? fullInspector : simpleInspector;
 
+  if (readOnly && !['editorial','bento','slides'].includes(project.layoutId)) {
+    return <PresentOverlay project={project} fragments={fragments} slideIndex={slideIndex} onSlide={setSlideIndex} onExit={onExit} readOnly onDuplicate={() => onDuplicate(project)} replayKey={replayKey} playing={playing} onToggleAudio={toggleAudio} />;
+  }
   if (readOnly) {
-    return (
-      <PresentOverlay
-        project={project}
-        fragments={fragments}
-        slideIndex={slideIndex}
-        onSlide={setSlideIndex}
-        onExit={onExit}
-        readOnly
-        onDuplicate={() => onDuplicate(project)}
-        replayKey={replayKey}
-        playing={playing}
-        onToggleAudio={toggleAudio}
-      />
-    );
+    return <div className="flex h-screen flex-col">
+      <header className="flex items-center justify-between border-b bg-white p-3 text-sm"><span>{project.name} · Lecture seule</span><button type="button" onClick={onExit}>Fermer</button><button type="button" onClick={() => onDuplicate(project)}>Créer une copie</button></header>
+      <SectionCanvas project={project} fragments={fragments} selectedId={null} onSelect={() => {}} onInsert={() => {}} onMove={() => {}} onSettings={() => {}} preview />
+    </div>;
   }
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#f5f5f7] text-gray-900">
       <TopBar
         advanced={advanced}
+        onPreview={() => setMode(mode === 'edit' ? 'use' : 'edit')}
+        previewing={mode !== 'edit'}
+        saveStatus={saveError ? 'Sauvegarde impossible' : pendingSave ? 'Modifications en cours' : 'Sauvegardé sur cet appareil'}
         onToggleAdvanced={() => { setAdvanced(v => !v); setView('composition'); setTool('select'); setLayoutPicker(false); setLeftOpen(false); }}
         project={project}
         projectsCount={projectsCount}
@@ -873,13 +892,14 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
         onDuplicate={() => onDuplicate(project)}
         onOpenSearch={() => setModal('search')}
         onOpenAdd={() => {
+          if (!advanced) { insertSection(selectedCell ? project.cells.findIndex(c => c.id === selectedCell.id) + 1 : project.cells.length); return; }
           setAddTab('url');
           setModal('add');
         }}
         onOpenShare={() => setModal('share')}
         leftOpen={leftOpen}
         rightOpen={rightOpen}
-        onToggleLeft={() => setLeftOpen((v) => !v)}
+        onToggleLeft={() => { if (!advanced) { setAddTab('github'); setModal('add'); } else setLeftOpen(v => !v); }}
         onToggleRight={() => setRightOpen((v) => !v)}
         onFocus={() => {
           const both = leftOpen || rightOpen;
@@ -892,8 +912,10 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
       />
 
       <div className="relative flex min-h-0 flex-1">
-        {leftOpen && (isLg ? library : <Drawer side="left" onClose={() => setLeftOpen(false)}>{library}</Drawer>)}
-        <Canvas
+        {advanced && leftOpen && (isLg ? library : <Drawer side="left" onClose={() => setLeftOpen(false)}>{library}</Drawer>)}
+        {!advanced ? <SectionCanvas project={project} fragments={fragments} selectedId={selectedCellId}
+          onSelect={setSelectedCellId} onInsert={insertSection} onMove={(id, delta) => update(p => moveSection(p, id, delta))}
+          onSettings={() => setRightOpen(true)} preview={mode !== 'edit'} /> : <Canvas
           advanced={advanced}
           project={project}
           fragments={fragments}
@@ -935,9 +957,9 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
           onAddCell={() => appendCell(null)}
           layoutPickerOpen={layoutPicker}
           onLayoutPicker={setLayoutPicker}
-        />
-        {rightOpen && (isXl ? inspector : <Drawer side="right" onClose={() => setRightOpen(false)}>{inspector}</Drawer>)}
-        {mode === 'use' && (
+        />}
+        {rightOpen && (advanced || mode === 'edit') && (isXl ? inspector : <Drawer side={advanced ? "right" : "bottom"} onClose={() => setRightOpen(false)}>{inspector}</Drawer>)}
+        {advanced && mode === 'use' && (
           <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/85 px-3 py-1.5 text-[11px] text-white shadow-lg">
             Mode UTILISER · les sites et médias sont interactifs — <span className="font-mono">E</span> pour éditer
           </div>
@@ -1001,7 +1023,7 @@ export function Editor({ initialProject, github, projectsCount, readOnly, onExit
         />;
       })()}
 
-      {mode === 'present' && (
+      {mode === 'present' && advanced && (
         <PresentOverlay
           project={project}
           fragments={fragments}

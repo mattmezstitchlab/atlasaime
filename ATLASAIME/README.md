@@ -107,3 +107,13 @@ Le parcours de création est : sélectionner des projets, choisir Page / Grille 
 L’atelier démarre en mode simple : bibliothèque fermée, réglages simples sur grand écran (nom, trois formats, texte du bloc, remplacement et ordre). Les réglages avancés réactivent l’inspecteur complet, le graphe, les supports, le recadrage et l’assistant local. Les raccourcis et menus contextuels historiques restent disponibles : il ne s’agit pas d’une restriction de permissions. Sur petit écran, les panneaux restent accessibles par leurs boutons.
 
 Les anciens parcours (brief, domaine, modèles, propositions de fusion et estimations) sont conservés dans Outils avancés avec retour à la vue simple. Aucun format de sauvegarde n’a changé dans ce lot. Cette simplification est ergonomique : tous les modules avancés sont encore dans le bundle, ce n’est pas encore une optimisation du poids de chargement.
+
+## Atelier à sections
+
+Le mode simple organise le travail comme un document : plan numéroté à gauche, sections centrales et réglages de la sélection à droite. La sélection est commune au plan, au contour de section et au panneau ; un choix dans le plan fait défiler le document. Le plan propose Monter/Descendre (verrous de position respectés), pas encore de glisser-déposer.
+
+Les boutons « + Ajouter ici » créent une section vide à la position indiquée puis ouvrent le choix de contenu. Annuler ce choix laisse la section vide, supprimable depuis les réglages. La duplication copie les fragments personnalisés pour que leurs textes puissent être modifiés indépendamment. La légende, le titre et le corps du texte restent modifiables quand le contenu n’est pas verrouillé.
+
+Aperçu masque plan, contours et commandes de section. Page est une séquence verticale, Grille présente deux colonnes sur grand écran, Diaporama permet de passer d’une section à la suivante. Les liens de lecture seule utilisent ce rendu pour les trois formats simples ; les autres formats historiques conservent leur présentation avancée. Le document simple est une vue de travail, pas une reproduction pixel à pixel des mises en page avancées. Leurs coordonnées et réglages sont conservés sans migration du stockage.
+
+Sur petit écran, le plan est dépliable et les réglages s’ouvrent en panneau inférieur. Le mode avancé conserve le canevas libre et ses outils. La barre supérieure propose Aperçu, Annuler/Rétablir et un statut de sauvegarde ; aucune sauvegarde distante n’est ajoutée. Recette navigateur restant à faire : défilement synchronisé, insertion/remplacement, duplication de texte, ordre, changements de format, lecture seule et panneaux mobiles.
