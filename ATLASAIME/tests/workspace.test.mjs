@@ -245,7 +245,9 @@ test('Editor starts in simple mode without agent, graph or animation controls', 
   const { Editor } = await server.ssrLoadModule('/src/components/editor/Editor.tsx');
   const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
   const html = render(Editor, { initialProject: createProject({ name: 'Simple editor', typeId: 'archive', layoutId: 'editorial', fill: 'vide' }), github: { repos: [], status: 'snapshot' }, projectsCount: 1, onExit: noop, onSaved: noop, onDuplicate: noop });
-  assert.match(html, /Réglages avancés/);
+  assert.match(html, /Mise en page/);
+  assert.doesNotMatch(html, /Vue simple|Réglages avancés/);
+  assert.match(html, /Outils de l’atelier/);
   assert.doesNotMatch(html, />Graphe<|> Graphe<|INSPECTEUR|Réactions locales/);
   assert.match(html, /Ajouter/);
 });
@@ -300,4 +302,18 @@ test('Insertion creates an empty selected destination between the original secti
   assert.equal(next.cells[1].fragmentId, null);
   assert.equal(project.cells.length + 1, next.cells.length);
   assert.deepEqual(project.cells.map(c => c.id), before);
+});
+
+
+test('Unified panel switches between plan and the existing library without a second editor', async () => {
+  const { SectionCanvas } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const props = { project: createProject({ name: 'Unified', typeId: 'archive', fill: 'vide' }), fragments: new Map(), selectedId: null, onSelect: noop, onInsert: noop, onMove: noop, onSettings: noop, preview: false, library: createElement('div', {}, 'LIBRARY_CONTENT'), onLibraryChange: noop };
+  const plan = render(SectionCanvas, props);
+  assert.match(plan, /Panneau de l’atelier/);
+  assert.match(plan, /Plan de la présentation/);
+  assert.doesNotMatch(plan, /LIBRARY_CONTENT/);
+  const library = render(SectionCanvas, { ...props, libraryOpen: true });
+  assert.match(library, /LIBRARY_CONTENT/);
+  assert.doesNotMatch(library, /Plan de la présentation/);
 });

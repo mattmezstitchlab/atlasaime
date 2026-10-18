@@ -1,5 +1,6 @@
 import { defaultSettings } from '../../data/templates';
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Cell, Fragment, Project } from '../../types';
 import { FragmentView } from './FragmentView';
 
@@ -18,7 +19,8 @@ export function moveSection(project: Project, id: string, delta: number): Projec
   [cells[i], cells[j]] = [cells[j], cells[i]];
   return { ...project, cells };
 }
-export function SectionCanvas({ project, fragments, selectedId, onSelect, onInsert, onMove, onSettings, preview }: {
+export function SectionCanvas({ project, fragments, selectedId, onSelect, onInsert, onMove, onSettings, preview, library, libraryOpen = false, onLibraryChange }: {
+  library?: ReactNode; libraryOpen?: boolean; onLibraryChange?: (open: boolean) => void;
   project: Project; fragments: Map<string, Fragment>; selectedId: string | null;
   onSelect: (id: string | null) => void; onInsert: (index: number) => void;
   onMove: (id: string, delta: number) => void; onSettings: () => void; preview: boolean;
@@ -28,6 +30,7 @@ export function SectionCanvas({ project, fragments, selectedId, onSelect, onInse
   const nodes = useRef(new Map<string, HTMLElement>());
   useEffect(() => { if (selectedId) nodes.current.get(selectedId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [selectedId]);
   const select = (id: string) => { onSelect(id); setPlanOpen(false); };
+  const tabs = <div role="group" aria-label="Panneau de l’atelier" className="flex gap-2 border-b p-3"><button type="button" aria-pressed={!libraryOpen} onClick={() => onLibraryChange?.(false)}>Plan</button><button type="button" aria-pressed={libraryOpen} onClick={() => onLibraryChange?.(true)}>Bibliothèque</button></div>;
   const plan = <nav aria-label="Plan de la présentation" className="space-y-2 p-4">
     <button type="button" onClick={() => onSelect(null)} className="mb-3 text-left font-semibold">{project.name}</button>
     <ol className="space-y-2">{project.cells.map((c, i) => <li key={c.id} className={`rounded-lg border p-2 ${selectedId === c.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}>
@@ -39,14 +42,14 @@ export function SectionCanvas({ project, fragments, selectedId, onSelect, onInse
   const visibleCells = preview && project.layoutId === 'slides' ? project.cells.slice(Math.min(slide, Math.max(0, project.cells.length - 1)), Math.min(slide, Math.max(0, project.cells.length - 1)) + 1) : project.cells;
   const insert = (index: number) => !preview && <button type="button" aria-label={`Ajouter une section à la position ${index + 1}`} onClick={() => onInsert(index)} className="my-3 w-full rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-500 hover:border-black hover:text-black">+ Ajouter ici</button>;
   return <div className="flex min-w-0 flex-1 overflow-hidden">
-    {!preview && <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-gray-200 bg-white lg:block">{plan}</aside>}
+    {!preview && <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-gray-200 bg-white lg:block">{tabs}{libraryOpen ? library : plan}</aside>}
     <div className="min-w-0 flex-1 overflow-y-auto bg-gray-100 p-3 sm:p-6" aria-label={preview ? 'Aperçu de la présentation' : 'Document à sections'}>
       {!preview && <div className="mb-3 flex justify-between text-sm"><button type="button" onClick={() => setPlanOpen(v => !v)} className="underline lg:hidden">Plan des sections</button><button type="button" onClick={onSettings} className="underline">Réglages de la sélection</button></div>}
-      {!preview && planOpen && <div className="mb-4 rounded-xl border bg-white lg:hidden">{plan}</div>}
+      {!preview && (planOpen || libraryOpen) && <div className="mb-4 rounded-xl border bg-white lg:hidden">{tabs}{libraryOpen ? library : plan}</div>}
       <div className={`mx-auto max-w-4xl ${project.theme.background === 'noir' ? 'bg-black text-white' : 'bg-white text-gray-900'} p-3 shadow-sm sm:p-6`}>
         {insert(0)}
         {preview && project.layoutId === 'slides' && <div className="mb-4 flex justify-between text-sm"><button type="button" disabled={slide <= 0} onClick={() => setSlide(v => Math.max(0, v-1))}>Précédente</button><span>{Math.min(slide+1,project.cells.length)} / {project.cells.length}</span><button type="button" disabled={slide >= project.cells.length - 1} onClick={() => setSlide(v => Math.min(project.cells.length - 1, v+1))}>Suivante</button></div>}
-        <div className={preview && project.layoutId === 'bento' ? 'grid gap-4 md:grid-cols-2' : 'space-y-4'}>
+        <div className={project.layoutId === 'bento' ? 'grid gap-4 md:grid-cols-2' : 'space-y-4'}>
         {visibleCells.map((c) => {
           const i = project.cells.findIndex(item => item.id === c.id);
           const f = c.fragmentId ? fragments.get(c.fragmentId) : undefined;

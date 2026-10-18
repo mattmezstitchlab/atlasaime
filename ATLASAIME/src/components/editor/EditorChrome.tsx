@@ -121,7 +121,7 @@ export function TopBar(p: TopBarProps) {
 
       <div className="flex items-center gap-1.5 lg:gap-2">
         <button type="button" onClick={p.onPreview} className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs">{p.previewing ? 'Retour à l’édition' : 'Aperçu'}</button>
-        <button type="button" onClick={p.onToggleAdvanced} aria-pressed={p.advanced} className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs">{p.advanced ? 'Vue simple' : 'Réglages avancés'}</button>
+        <button type="button" onClick={p.onToggleAdvanced} aria-pressed={p.advanced} className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs">Mise en page</button>
         {p.advanced && p.onOpenViewer && (
           <button type="button" onClick={p.onOpenViewer} className="hidden rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 lg:block">
             Mes compositions
