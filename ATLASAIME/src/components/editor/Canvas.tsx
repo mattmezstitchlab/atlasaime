@@ -14,6 +14,7 @@ import { useElementSize } from '../../hooks/useAtlas';
 import { cn } from '../../utils/cn';
 
 export interface CanvasProps {
+  advanced?: boolean;
   project: Project;
   fragments: Map<string, Fragment>;
   mode: AppViewMode;
@@ -169,7 +170,7 @@ export function Canvas(p: CanvasProps) {
           <span className="font-mono text-[10px] text-gray-300">·</span>
           <span className="truncate font-mono text-[10px] text-gray-400">{project.cells.length} cellules</span>
         </div>
-        <Segmented
+        {p.advanced && <Segmented
           value={view}
           onChange={p.onViewChange}
           className="w-[196px] shrink-0 sm:w-[270px]"
@@ -178,8 +179,8 @@ export function Canvas(p: CanvasProps) {
             { value: 'supports', label: <><Smartphone className="h-3 w-3" /> Supports</> },
             { value: 'graph', label: <><Spline className="h-3 w-3" /> Graphe</> },
           ]}
-        />
-        <div className={cn('flex items-center gap-1.5', view !== 'composition' && 'invisible')}>
+        />}
+        <div className={cn('flex items-center gap-1.5', (!p.advanced || view !== 'composition') && 'hidden')}>
           <Segmented
             value={project.arrangement === 'libre' || layout.kind === 'free' ? 'libre' : 'grille'}
             onChange={p.onSetArrangement}
@@ -324,7 +325,7 @@ export function Canvas(p: CanvasProps) {
       {/* Barre d'outils flottante */}
       {p.mode === 'edit' && (
         <div className="absolute left-3 top-[60px] z-20 hidden flex-col items-center rounded-2xl border border-gray-200/90 bg-white/95 p-1 shadow-lg shadow-gray-300/40 backdrop-blur sm:flex">
-          {tools.map((t) => {
+          {tools.filter(t => p.advanced || ['select','pan','text'].includes(t.id)).map((t) => {
             const active = (t.id === 'layout' && p.layoutPickerOpen) || (p.tool === t.id && (t.id === 'select' || t.id === 'pan'));
             return (
               <button
@@ -382,7 +383,7 @@ export function Canvas(p: CanvasProps) {
           </div>
         </>
       )}
-      {p.mode !== 'present' && <CanvasAgent onCommand={p.onAgentCommand} onUndo={p.onUndo} canUndo={p.canUndo} />}
+      {p.advanced && p.mode !== 'present' && <CanvasAgent onCommand={p.onAgentCommand} onUndo={p.onUndo} canUndo={p.canUndo} />}
     </main>
   );
 }

@@ -97,3 +97,45 @@ Cette étape ne lance aucun dépôt pour en prendre une capture, ne recherche pa
 - Le stockage reste `localStorage`, sans compte ni synchronisation et sans verrou multi-onglets. Une base locale de médias (IndexedDB) et des tests d’interaction navigateur sont les prochaines étapes, pas des fonctions déjà livrées.
 
 Les commandes de contrôle TypeScript, tests, build et audit des dépendances ont été exécutées localement ; la CI distante reste à installer. Recette navigateur à effectuer avant fusion : importer image/PDF/vidéo, exporter, recharger, restaurer sur un autre profil, tester le refus du presse-papiers et du stockage, puis ouvrir un assemblage partagé dans une session vierge.
+
+## Vue simple
+
+L’entrée principale est désormais le catalogue des projets avec recherche, domaine et sélection. La navigation présente Projets, Documents et Mes compositions. Les trois dernières compositions sont proposées sur l’accueil ; toutes restent accessibles dans Mes compositions, avec duplication et suppression confirmée.
+
+Le parcours de création est : sélectionner des projets, choisir Page / Grille / Diaporama, nommer, puis ajuster dans l’atelier. Une présentation vide reste possible. La comparaison des projets sélectionnés conserve la visionneuse existante. La fiche de chaque carte donne accès à la préparation d’une présentation.
+
+L’atelier démarre en mode simple : bibliothèque fermée, réglages simples sur grand écran (nom, trois formats, texte du bloc, remplacement et ordre). Les réglages avancés réactivent l’inspecteur complet, le graphe, les supports, le recadrage et l’assistant local. Les raccourcis et menus contextuels historiques restent disponibles : il ne s’agit pas d’une restriction de permissions. Sur petit écran, les panneaux restent accessibles par leurs boutons.
+
+Les anciens parcours (brief, domaine, modèles, propositions de fusion et estimations) sont conservés dans Outils avancés avec retour à la vue simple. Aucun format de sauvegarde n’a changé dans ce lot. Cette simplification est ergonomique : tous les modules avancés sont encore dans le bundle, ce n’est pas encore une optimisation du poids de chargement.
+
+## Atelier à sections
+
+Le mode simple organise le travail comme un document : plan numéroté à gauche, sections centrales et réglages de la sélection à droite. La sélection est commune au plan, au contour de section et au panneau ; un choix dans le plan fait défiler le document. Le plan propose Monter/Descendre (verrous de position respectés), pas encore de glisser-déposer.
+
+Les boutons « + Ajouter ici » créent une section vide à la position indiquée puis ouvrent le choix de contenu. Annuler ce choix laisse la section vide, supprimable depuis les réglages. La duplication copie les fragments personnalisés pour que leurs textes puissent être modifiés indépendamment. La légende, le titre et le corps du texte restent modifiables quand le contenu n’est pas verrouillé.
+
+Aperçu masque plan, contours et commandes de section. Page est une séquence verticale, Grille présente deux colonnes sur grand écran, Diaporama permet de passer d’une section à la suivante. Les liens de lecture seule utilisent ce rendu pour les trois formats simples ; les autres formats historiques conservent leur présentation avancée. Le document simple est une vue de travail, pas une reproduction pixel à pixel des mises en page avancées. Leurs coordonnées et réglages sont conservés sans migration du stockage.
+
+Sur petit écran, le plan est dépliable et les réglages s’ouvrent en panneau inférieur. Le mode avancé conserve le canevas libre et ses outils. La barre supérieure propose Aperçu, Annuler/Rétablir et un statut de sauvegarde ; aucune sauvegarde distante n’est ajoutée. Recette navigateur restant à faire : défilement synchronisé, insertion/remplacement, duplication de texte, ordre, changements de format, lecture seule et panneaux mobiles.
+
+## Atelier unifié (remplace la bascule simple / avancé)
+
+Le panneau de gauche réunit Plan et Bibliothèque. Ajouter crée une section à la position voulue et ouvre la bibliothèque existante ; Remplacer utilise la même bibliothèque en indiquant sa destination. Les imports URL/fichier/texte restent dans les dialogues existants. Une seule sélection pilote plan, document et réglages.
+
+Mise en page ouvre les propriétés du document. Les réglages rapides et l’inspecteur historique sont regroupés dans le panneau droit, ce dernier dans « Mise en page et réglages détaillés ». Les changements de mise en page conservent le nombre, l’ordre et les contenus des blocs : ils ne rajoutent plus automatiquement des cases vides. Les réglages détaillés historiques ne sont pas tous représentés dans la vue document ; l’unification complète de leurs effets visuels reste une étape ultérieure.
+
+La palette regroupe Sélection, Ajouter, Texte et Recadrer selon le contenu sélectionné. Le déplacement de vue reste celui du défilement pour les documents ; le format Libre conserve le canevas géométrique et ses outils spécifiques. Ce n’est plus un mode ancien/nouveau choisi par un bouton. Les composants de rendu géométrique ne sont pas supprimés car ils restent nécessaires aux anciennes compositions libres.
+
+Les documents utilisent le même composant pour édition, aperçu et lecture seule ; les repères d’édition sont masqués en aperçu. La grille à deux colonnes est visible pendant l’édition aussi. Le diaporama reste une liste de travail en édition et une présentation séquencée en aperçu. Aucun moteur de site externe comparable à Framer n’est intégré et aucune performance nouvelle n’est garantie. Recette navigateur à faire : bibliothèque sur ordinateur/mobile, insertion et remplacement, conservation des blocs lors des changements de format, recadrage et rendu des compositions libres.
+
+## Médiathèque visuelle
+
+Dans Bibliothèque, une médiathèque affiche les images et des lecteurs vidéo/audio à la demande (sans lecture automatique ni préchargement complet). Les PDF s’ouvrent par lien, sans rendu de première page. Recherche par nom/projet/chemin et filtres de source et type. Le bouton d’insertion est distinct de l’aperçu : consulter un média ne modifie pas la composition.
+
+Les imports multiples ou déposés depuis l’ordinateur sont conservés comme fichiers dans IndexedDB, par appareil et origine du site, avec dédoublonnage SHA-256 (100 Mo maximum par fichier, sous réserve du quota du navigateur). Seuls les fichiers explicitement choisis sont lus. La médiathèque n’est pas synchronisée, pas sauvegardée dans le fichier d’export des compositions et peut être perdue si les données du site sont effacées. Garder les originaux sur l’ordinateur. Pas de suppression de fichier ou de favoris dans cette première étape.
+
+Lors de l’insertion, un fichier local est embarqué dans la composition (10 Mo maximum), ce qui permet la sauvegarde complète existante, mais reste soumis au quota localStorage et aux alertes de sauvegarde. Les URL blob utilisées pour les lecteurs sont temporaires et révoquées au démontage ; les fichiers persistants restent dans IndexedDB. La conservation de fichiers plus gros n’implique pas qu’ils puissent être insérés dans une composition.
+
+GitHub : choisir un dépôt du catalogue et lancer Indexer. L’API publique est interrogée sans token, donc seuls les dépôts publics accessibles sont indexables, sous limite de débit. Le catalogue des dépôts n’est pas un index automatique de tous leurs médias. L’arbre récursif est filtré par extension, hors node_modules/.git/dist ; un arbre tronqué est signalé. Les liens raw sont épinglés au SHA de l’arbre retourné et conservent la provenance. L’indexation est additive, ne purge pas les anciens chemins et n’inclut pas les sous-modules, fichiers LFS téléchargés, médias externes cités dans les README ou dépôts privés. Le rendu dépend du format pris en charge par le navigateur et de la disponibilité des fichiers distants.
+
+Tests IndexedDB simulés via fake-indexeddb (dépendance de développement uniquement). Recette navigateur toujours nécessaire : import multiple et glisser-déposer, rechargement, lecture audio/vidéo, quota refusé, indexation GitHub, insertion dans la destination choisie, export/restauration de la composition et usage mobile.
