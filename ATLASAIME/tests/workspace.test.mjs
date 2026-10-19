@@ -418,7 +418,7 @@ test('About page uses confirmed Lille identity and founder title without homonym
   assert.match(html, /graphisme et la direction artistique/);
   assert.doesNotMatch(html, /Angers|PANORAMA|industrie|Saint-Luc|Zankyou|github\.com|href="\/admin"/i);
   assert.match(html, /height:100dvh;overflow-y:auto/);
-  for (const name of ['POINTZERO','RELIA','SILLAGE']) assert.ok(html.includes(name));
+  for (const name of ['POINTZERO','RELIA','NOEMA']) assert.ok(html.includes(name));
 });
 
 test('About page routing is public and does not bypass protected admin', async () => {
@@ -428,4 +428,18 @@ test('About page routing is public and does not bypass protected admin', async (
   assert.equal(config.rewrites.find(r => r.source === '/admin').destination, '/api/admin');
   const { PublicPortfolio } = await server.ssrLoadModule('/src/components/portfolio/PublicPortfolio.tsx');
   assert.match(render(PublicPortfolio), /href="\/a-propos"/);
+});
+
+
+test('Research timeline separates explicit document dates from undated threads', async () => {
+  const { RESEARCH_TRACES, RESEARCH_THREADS } = await server.ssrLoadModule('/src/data/researchTimeline.ts');
+  assert.deepEqual(RESEARCH_TRACES.map(t => t.date), ['2026-10-08','2026-10-15']);
+  assert.ok(RESEARCH_TRACES.every(t => t.source.revision.length === 40));
+  assert.ok(RESEARCH_THREADS.every(t => !('date' in t) && t.source.path));
+  const { AboutPage } = await server.ssrLoadModule('/src/components/portfolio/AboutPage.tsx');
+  const html = render(AboutPage);
+  assert.match(html, /dateTime="2026-10-08"/i);
+  assert.match(html, /pas les dates de naissance des idées/);
+  assert.match(html, /sans leur attribuer un ordre chronologique/);
+  assert.doesNotMatch(html, /La démarche, en projets|Saint-Luc|2023|2024|2025|href="https:\/\/github/);
 });
