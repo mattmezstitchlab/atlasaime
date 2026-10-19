@@ -55,7 +55,7 @@ Une configuration CI séparée est fournie pour installation propre, TypeScript,
 4. Vérifiez ces valeurs : installation `npm ci`, build `npm run build`, sortie `dist`, Node.js 20.
 5. Déployez. Les pushes sur la branche de production créent un déploiement de production; les pull requests obtiennent des preview deployments si l'intégration Git Vercel est activée.
 
-Aucune variable d'environnement n'est requise. `vercel.json` ajoute des en-têtes de sécurité adaptés à cette application statique. Il n'y a volontairement pas de CSP stricte : les compositions affichent des sites tiers, YouTube, des captures externes et Google Fonts dans des iframes. L'application n'a pas besoin d'être elle-même embarquée dans un autre site.
+Le portfolio ne requiert aucune variable ; l’administration nécessite les deux secrets serveur décrits en fin de document. `vercel.json` ajoute des en-têtes de sécurité adaptés à cette application statique. Il n'y a volontairement pas de CSP stricte : les compositions affichent des sites tiers, YouTube, des captures externes et Google Fonts dans des iframes. L'application n'a pas besoin d'être elle-même embarquée dans un autre site.
 
 ### État des audits npm
 
@@ -63,7 +63,7 @@ Le plugin `vite-plugin-singlefile` est mis à jour vers 2.3.4 pour retirer la ch
 
 ## Fonctionnement et limites de production
 
-- **Frontend statique** : aucune API serveur ATLAS, base de données, authentification, secret ou déploiement de code généré n'est connecté.
+- **Architecture** : portfolio statique et atelier local servis derrière une fonction d’authentification serveur. Pas de base métier distante, synchronisation ou déploiement de code généré.
 - **Sauvegarde locale** : compositions, conditions cochées et signaux sont enregistrés dans le navigateur. Ils ne sont pas synchronisés entre appareils et leur suppression du stockage du navigateur est irréversible.
 - **Partage** : le lien en lecture seule embarque la composition dans le fragment `#lecture=…`. Ce n'est ni chiffré ni un contrôle d'accès. Ne partagez pas de données privées ou personnelles dans un lien.
 - **Assistant** : ses règles, sélections de spécialités et actions sur le canevas s'exécutent côté navigateur à partir des documents et projets publics disponibles. Aucun appel à un modèle IA distant n'est effectué. Il sait créer un brouillon de site composé de vrais fragments et de sections texte modifiables ; il ne génère ni backend, ni paiement, ni compte, ni code déployé.
@@ -97,3 +97,90 @@ Cette étape ne lance aucun dépôt pour en prendre une capture, ne recherche pa
 - Le stockage reste `localStorage`, sans compte ni synchronisation et sans verrou multi-onglets. Une base locale de médias (IndexedDB) et des tests d’interaction navigateur sont les prochaines étapes, pas des fonctions déjà livrées.
 
 Les commandes de contrôle TypeScript, tests, build et audit des dépendances ont été exécutées localement ; la CI distante reste à installer. Recette navigateur à effectuer avant fusion : importer image/PDF/vidéo, exporter, recharger, restaurer sur un autre profil, tester le refus du presse-papiers et du stockage, puis ouvrir un assemblage partagé dans une session vierge.
+
+## Vue simple
+
+L’entrée principale est désormais le catalogue des projets avec recherche, domaine et sélection. La navigation présente Projets, Documents et Mes compositions. Les trois dernières compositions sont proposées sur l’accueil ; toutes restent accessibles dans Mes compositions, avec duplication et suppression confirmée.
+
+Le parcours de création est : sélectionner des projets, choisir Page / Grille / Diaporama, nommer, puis ajuster dans l’atelier. Une présentation vide reste possible. La comparaison des projets sélectionnés conserve la visionneuse existante. La fiche de chaque carte donne accès à la préparation d’une présentation.
+
+L’atelier démarre en mode simple : bibliothèque fermée, réglages simples sur grand écran (nom, trois formats, texte du bloc, remplacement et ordre). Les réglages avancés réactivent l’inspecteur complet, le graphe, les supports, le recadrage et l’assistant local. Les raccourcis et menus contextuels historiques restent disponibles : il ne s’agit pas d’une restriction de permissions. Sur petit écran, les panneaux restent accessibles par leurs boutons.
+
+Les anciens parcours (brief, domaine, modèles, propositions de fusion et estimations) sont conservés dans Outils avancés avec retour à la vue simple. Aucun format de sauvegarde n’a changé dans ce lot. Cette simplification est ergonomique : tous les modules avancés sont encore dans le bundle, ce n’est pas encore une optimisation du poids de chargement.
+
+## Atelier à sections
+
+Le mode simple organise le travail comme un document : plan numéroté à gauche, sections centrales et réglages de la sélection à droite. La sélection est commune au plan, au contour de section et au panneau ; un choix dans le plan fait défiler le document. Le plan propose Monter/Descendre (verrous de position respectés), pas encore de glisser-déposer.
+
+Les boutons « + Ajouter ici » créent une section vide à la position indiquée puis ouvrent le choix de contenu. Annuler ce choix laisse la section vide, supprimable depuis les réglages. La duplication copie les fragments personnalisés pour que leurs textes puissent être modifiés indépendamment. La légende, le titre et le corps du texte restent modifiables quand le contenu n’est pas verrouillé.
+
+Aperçu masque plan, contours et commandes de section. Page est une séquence verticale, Grille présente deux colonnes sur grand écran, Diaporama permet de passer d’une section à la suivante. Les liens de lecture seule utilisent ce rendu pour les trois formats simples ; les autres formats historiques conservent leur présentation avancée. Le document simple est une vue de travail, pas une reproduction pixel à pixel des mises en page avancées. Leurs coordonnées et réglages sont conservés sans migration du stockage.
+
+Sur petit écran, le plan est dépliable et les réglages s’ouvrent en panneau inférieur. Le mode avancé conserve le canevas libre et ses outils. La barre supérieure propose Aperçu, Annuler/Rétablir et un statut de sauvegarde ; aucune sauvegarde distante n’est ajoutée. Recette navigateur restant à faire : défilement synchronisé, insertion/remplacement, duplication de texte, ordre, changements de format, lecture seule et panneaux mobiles.
+
+## Atelier unifié (remplace la bascule simple / avancé)
+
+Le panneau de gauche réunit Plan et Bibliothèque. Ajouter crée une section à la position voulue et ouvre la bibliothèque existante ; Remplacer utilise la même bibliothèque en indiquant sa destination. Les imports URL/fichier/texte restent dans les dialogues existants. Une seule sélection pilote plan, document et réglages.
+
+Mise en page ouvre les propriétés du document. Les réglages rapides et l’inspecteur historique sont regroupés dans le panneau droit, ce dernier dans « Mise en page et réglages détaillés ». Les changements de mise en page conservent le nombre, l’ordre et les contenus des blocs : ils ne rajoutent plus automatiquement des cases vides. Les réglages détaillés historiques ne sont pas tous représentés dans la vue document ; l’unification complète de leurs effets visuels reste une étape ultérieure.
+
+La palette regroupe Sélection, Ajouter, Texte et Recadrer selon le contenu sélectionné. Le déplacement de vue reste celui du défilement pour les documents ; le format Libre conserve le canevas géométrique et ses outils spécifiques. Ce n’est plus un mode ancien/nouveau choisi par un bouton. Les composants de rendu géométrique ne sont pas supprimés car ils restent nécessaires aux anciennes compositions libres.
+
+Les documents utilisent le même composant pour édition, aperçu et lecture seule ; les repères d’édition sont masqués en aperçu. La grille à deux colonnes est visible pendant l’édition aussi. Le diaporama reste une liste de travail en édition et une présentation séquencée en aperçu. Aucun moteur de site externe comparable à Framer n’est intégré et aucune performance nouvelle n’est garantie. Recette navigateur à faire : bibliothèque sur ordinateur/mobile, insertion et remplacement, conservation des blocs lors des changements de format, recadrage et rendu des compositions libres.
+
+## Médiathèque visuelle
+
+Dans Bibliothèque, une médiathèque affiche les images et des lecteurs vidéo/audio à la demande (sans lecture automatique ni préchargement complet). Les PDF s’ouvrent par lien, sans rendu de première page. Recherche par nom/projet/chemin et filtres de source et type. Le bouton d’insertion est distinct de l’aperçu : consulter un média ne modifie pas la composition.
+
+Les imports multiples ou déposés depuis l’ordinateur sont conservés comme fichiers dans IndexedDB, par appareil et origine du site, avec dédoublonnage SHA-256 (100 Mo maximum par fichier, sous réserve du quota du navigateur). Seuls les fichiers explicitement choisis sont lus. La médiathèque n’est pas synchronisée, pas sauvegardée dans le fichier d’export des compositions et peut être perdue si les données du site sont effacées. Garder les originaux sur l’ordinateur. Pas de suppression de fichier ou de favoris dans cette première étape.
+
+Lors de l’insertion, un fichier local est embarqué dans la composition (10 Mo maximum), ce qui permet la sauvegarde complète existante, mais reste soumis au quota localStorage et aux alertes de sauvegarde. Les URL blob utilisées pour les lecteurs sont temporaires et révoquées au démontage ; les fichiers persistants restent dans IndexedDB. La conservation de fichiers plus gros n’implique pas qu’ils puissent être insérés dans une composition.
+
+GitHub : choisir un dépôt du catalogue et lancer Indexer. L’API publique est interrogée sans token, donc seuls les dépôts publics accessibles sont indexables, sous limite de débit. Le catalogue des dépôts n’est pas un index automatique de tous leurs médias. L’arbre récursif est filtré par extension, hors node_modules/.git/dist ; un arbre tronqué est signalé. Les liens raw sont épinglés au SHA de l’arbre retourné et conservent la provenance. L’indexation est additive, ne purge pas les anciens chemins et n’inclut pas les sous-modules, fichiers LFS téléchargés, médias externes cités dans les README ou dépôts privés. Le rendu dépend du format pris en charge par le navigateur et de la disponibilité des fichiers distants.
+
+Tests IndexedDB simulés via fake-indexeddb (dépendance de développement uniquement). Recette navigateur toujours nécessaire : import multiple et glisser-déposer, rechargement, lecture audio/vidéo, quota refusé, indexation GitHub, insertion dans la destination choisie, export/restauration de la composition et usage mobile.
+
+## Portfolio public
+
+`/portfolio` et `/` présentent un catalogue public visuel distinct de l’atelier protégé (`/admin`). Il utilise uniquement l’instantané des dépôts publics non vides, jamais les compositions du navigateur, les imports locaux ou IndexedDB. Les grands visuels conservent les badges de provenance (capture externe, visuel ou maquette indicative). Aucun visuel du site de référence n’est copié.
+
+Les concepts des projets principaux sont rédigés depuis leurs titres/descriptions publics ; les autres utilisent leurs métadonnées ou un texte explicite « concept à documenter ». Ce ne sont ni des preuves de fonctionnalités ni des déclarations de maturité. La sélection et les textes sont éditables dans `src/data/portfolio.ts`, avec recherche et filtre de domaine. L’index est un instantané, pas une publication automatique des nouveaux dépôts.
+
+Route `/portfolio` et `/portfolio/` réécrite vers l’entrée SPA. La protection de l’atelier est assurée par la route serveur `/admin`, pas par le masquage de ses liens. Page cliente : titre actualisé côté navigateur ; métadonnées sociales/prérendu SEO spécifiques à améliorer dans une étape distincte. Pas de copie de biographie, coordonnées ou références clients du site d’inspiration. Vérifier visuellement sur mobile/ordinateur et valider les descriptifs avant publication.
+
+### Mosaïque et défilement
+
+Le portfolio possède un conteneur `100dvh` avec défilement vertical : il ne dépend plus du body verrouillé par l’atelier. Le retour en haut cible ce conteneur. Galerie en trois colonnes sur ordinateur, deux sur tablette et une sur téléphone, avec titre/catégorie avant le visuel, mode liste et thème clair/sombre. Les concepts s’ouvrent dans une boîte de dialogue native (fermeture par bouton ou Échap). La direction est inspirée des captures fournies, sans reprendre leurs images ou projets. Recette navigateur requise pour scroll, focus/fermeture de la fenêtre et responsive.
+
+## Portfolio public et administration protégée (remplace l’accès atelier à la racine)
+
+Le portfolio est servi sur `/` et `/portfolio`, sans liens vers GitHub ni vers l’atelier. Les dépôts sources déjà publics restent publics chez GitHub. L’administration est accessible directement sur `/admin` et `/admin/…` via la fonction Node `api/admin.js`. L’atelier n’est plus dans le build statique public ; son HTML autonome est produit dans `.admin-build/admin.html`, inclus uniquement dans la fonction. La build échoue si l’entrée publique contient les marqueurs de l’atelier ou des chunks JS publics résiduels. Le code source du dépôt reste public : cette séparation n’est pas une mesure d’obfuscation du code.
+
+### Installation obligatoire par le propriétaire
+
+Dans Vercel → projet Atlasaime → Settings → Environment Variables :
+
+- `ATLAS_ADMIN_PASSWORD` : un mot de passe aléatoire unique d’au moins 24 caractères, créé dans un gestionnaire de mots de passe.
+- `ATLAS_SESSION_SECRET` : une autre valeur aléatoire indépendante d’au moins 32 caractères, créée dans le gestionnaire.
+
+Les ajouter comme variables serveur sensibles, sans préfixe `VITE_`, pour Production et pour Preview seulement si l’administration doit aussi y être testée. Ne pas transmettre les valeurs à un assistant, ne pas les committer ni les mettre dans un fichier versionné. Redéployer après configuration. Sans les deux valeurs valides, le serveur répond 503 et l’accès reste fermé ; aucun mot de passe par défaut ou contournement n’existe. Aucun secret n’a été configuré automatiquement par cette PR.
+
+Le formulaire de connexion POST vérifie l’origine, limite la taille des entrées et compare une empreinte SHA-256 en temps constant. Les sessions sont signées HMAC avec aléa et expiration de huit heures ; cookie `__Host-` Secure, HttpOnly et SameSite=Strict. Les réponses privées sont non mises en cache et non indexables. La rotation du mot de passe ou de la clé invalide les sessions. Déconnexion efface le cookie de ce navigateur ; elle ne révoque pas un éventuel cookie déjà volé avant son expiration (rotation pour révocation globale).
+
+Une limite de cinq tentatives par quinze minutes et un délai sont appliqués **par instance serveur uniquement**. Ce n’est pas une protection distribuée contre les attaques : avant une exposition sensible, configurer une règle WAF/rate limit persistante ou remplacer ce login mono-propriétaire par un fournisseur d’identité avec MFA. Le mot de passe doit être généré aléatoirement, pas une phrase prévisible. Il n’y a ni compte multi-utilisateurs, ni récupération par email, ni MFA dans cette étape.
+
+Les anciennes compositions et IndexedDB restent sur la même origine, sans migration. Les liens lecture seule de l’atelier sont désormais derrière `/admin` et nécessitent une connexion ; le portfolio public reste indépendant. L’authentification protège l’accès HTTP à l’atelier, pas un appareil déjà déverrouillé ou les exports téléchargés localement. Les builds preview et production ont des stockages navigateur séparés.
+
+### Tests et développement
+
+Exécuter `node --test tests/*.test.mjs`, TypeScript, puis `npm run build`. `npm run dev` est un serveur de développement local, **pas** une protection d’accès : ne pas le rendre public. Les routes serveur nécessitent l’environnement de fonctions Vercel ; `npm run preview` sert seulement le portfolio statique. Valider le déploiement réel avant fusion : `/` et `/portfolio`, accès direct anonyme `/admin` et `/api/admin`, refus sans secrets, connexion, déconnexion, expiration, absence de `/admin.html` public et absence de cache privé. Pas de test navigateur ni audit de sécurité externe effectué.
+
+## Page À propos
+
+`/a-propos` présente Matthieu Lecointre / Matt Mez, Lille (Nord), avec le titre personnellement confirmé « Fondateur d’AIME — Musicien, designer, créateur de liens ». Le parcours musique/graphisme/direction artistique est étayé par l’article La Voix du Nord du 6 mars 2021 (identité artistique et saxophone événementiel) et le profil public professionnel Matthieu Lecointre associé à Matt Mez Sax (double pratique graphique et musicale). Aucun élément de l’homonyme d’Angers n’est utilisé. Les dates, diplômes, récompenses, structures juridiques et clients non confirmés sont exclus.
+
+Texte éditorial prudent autour des pratiques et des concepts AIME, avec POINTZERO, RELIA et SILLAGE pour illustrations. Pas de portrait emprunté, pas de coordonnées ajoutées, pas de liens GitHub/administration. Le titre de fondateur est une déclaration validée par l’intéressé, pas une vérification de statut juridique. Les intentions formulées restent ajustables avant publication. La page possède son défilement et réutilise l’identité visuelle du portfolio ; lien public depuis la navigation et la section À propos. Aucun changement de l’authentification ni des secrets.
+
+### Frise des recherches sur À propos
+
+Les trois cartes de projets sont remplacées par des traces documentaires datées et un bloc séparé de fils non datés. RELIA V4 porte le 8 octobre 2026 ; le registre éditorial POINTZERO porte le 15 octobre 2026. Ces dates décrivent les documents, pas l’origine des recherches. Le manifeste MINISITEWEDDING, la note de conception des profils et la constitution proposée NOEMA restent non datés, sans ordre chronologique inventé. Les chemins et SHA inspectés sont conservés dans `src/data/researchTimeline.ts`, sans liens GitHub dans la page publique. La durée approximative de trois ans est attribuée au récit de l’intéressé ; aucune étape annuelle 2023–2025 n’est fabriquée. Saint-Luc est différé à sa demande. Les textes de conception ne sont pas présentés comme ses souvenirs ou des citations personnelles.

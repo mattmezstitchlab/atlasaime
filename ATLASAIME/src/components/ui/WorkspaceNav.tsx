@@ -13,9 +13,9 @@ export function WorkspaceNav({
   compact?: boolean;
 }) {
   const links = [
-    { id: 'home' as const, label: 'Accueil', icon: Home },
-    { id: 'viewer' as const, label: 'Projets', icon: Grid2X2 },
-    { id: 'desk' as const, label: 'Bureau', icon: BookOpen },
+    { id: 'home' as const, label: 'Projets', icon: Home },
+    { id: 'viewer' as const, label: 'Mes compositions', icon: Grid2X2 },
+    { id: 'desk' as const, label: 'Documents', icon: BookOpen },
   ];
   return (
     <nav aria-label="Espace de travail" className="no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full border border-gray-200/80 bg-[#f5f5f7]/80 p-1">

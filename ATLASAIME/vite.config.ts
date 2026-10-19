@@ -9,15 +9,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     host: true,
     allowedHosts: true,
   },
+  build: { outDir: mode === "admin" ? ".admin-build" : "dist", rollupOptions: { input: path.resolve(__dirname, mode === "admin" ? "admin.html" : "index.html") } },
   plugins: [react(), tailwindcss(), viteSingleFile()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
     },
   },
-});
+}));

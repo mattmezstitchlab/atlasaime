@@ -10,19 +10,18 @@ const { renderToStaticMarkup } = await import('react-dom/server');
 const render = (Component, props = {}) => renderToStaticMarkup(createElement(Component, props));
 const noop = () => {};
 
-test('Accueil centers exploration and keeps estimates secondary', async () => {
+test('Home prioritizes the searchable project catalogue and hides advanced tools', async () => {
   const { StartScreen } = await server.ssrLoadModule('/src/components/start/StartScreen.tsx');
   const html = render(StartScreen, {
     github: { repos: [], status: 'snapshot', syncedAt: '2026-10-18', sync: noop }, recent: [],
     onOpen: noop, onCreate: noop, onDelete: noop, onDuplicate: noop,
     onOpenViewer: noop, onOpenSystems: noop, onOpenDesk: noop,
   });
-  assert.match(html, /Explorer et comparer/);
-  assert.match(html, /Lire les documents/);
-  assert.match(html, /Méthode de composition/);
-  assert.match(html, /<details[^>]*><summary[^>]*>Suivi documentaire/);
-  assert.doesNotMatch(html, /Nom du projet/); // manual controls are not invisibly focusable
-  assert.doesNotMatch(html, /Générer les pages du site/);
+  assert.match(html, /Catalogue des projets/);
+  assert.match(html, /Rechercher un projet/);
+  assert.match(html, /Créer une composition/);
+  assert.match(html, /<details[^>]*><summary[^>]*>Outils avancés/);
+  assert.doesNotMatch(html, /Méthode de composition|Estimation|Lecture du brief/);
 });
 
 test('Brief composer clearly states local behavior without staged agent reactions', async () => {
@@ -45,7 +44,7 @@ test('Primary navigation prioritizes projects and documents over visual tools', 
   const { WorkspaceNav } = await server.ssrLoadModule('/src/components/ui/WorkspaceNav.tsx');
   const html = render(WorkspaceNav, { active: 'home', onNavigate: noop });
   assert.match(html, /aria-label="Projets"/);
-  assert.match(html, /aria-label="Bureau"/);
+  assert.match(html, /aria-label="Documents"/);
   assert.doesNotMatch(html, /aria-label="Design"/);
 });
 
@@ -213,4 +212,234 @@ test('Malformed settings and unreadable existing storage are not silently overwr
   h.saveProject(p);
   assert.equal(value, corrupt);
   assert.match(h.getStorageError(), /impossible/);
+});
+
+test('Navigation exposes exactly three named destinations', async () => {
+  const { WorkspaceNav } = await server.ssrLoadModule('/src/components/ui/WorkspaceNav.tsx');
+  const html = render(WorkspaceNav, { active: 'home', onNavigate: noop });
+  assert.equal((html.match(/<button/g) ?? []).length, 3);
+  for (const label of ['Projets','Documents','Mes compositions']) assert.ok(html.includes(`aria-label="${label}"`));
+});
+
+test('Composition view keeps all saved work and hides the project catalogue', async () => {
+  const { StartScreen, SIMPLE_FORMATS } = await server.ssrLoadModule('/src/components/start/StartScreen.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const recent = Array.from({ length: 30 }, (_, i) => createProject({ name: `Unique composition ${i}`, typeId: 'blank', fill: 'vide' }));
+  const html = render(StartScreen, { initialTab: 'compositions', recent, github: { repos: [], status: 'snapshot', sync: noop }, onOpen: noop, onCreate: noop, onOpenViewer: noop, onOpenDesk: noop });
+  assert.match(html, /Unique composition 29/);
+  assert.doesNotMatch(html, /Catalogue des projets/);
+  assert.deepEqual(SIMPLE_FORMATS.map(f => f.name), ['Page','Grille','Diaporama']);
+});
+
+test('Catalogue cards keep opening and selection actions with a project sheet', async () => {
+  const { StartScreen } = await server.ssrLoadModule('/src/components/start/StartScreen.tsx');
+  const html = render(StartScreen, { recent: [], github: { repos: [sampleRepo], status: 'snapshot', sync: noop }, onOpen: noop, onCreate: noop, onOpenViewer: noop, onOpenDesk: noop });
+  assert.match(html, /MONDEMARIAGE/);
+  assert.match(html, /type="checkbox"/);
+  assert.match(html, /Ouvrir le code/);
+  assert.match(html, /Fiche du projet/);
+  assert.doesNotMatch(html, /> Étude</);
+});
+
+test('Editor starts in simple mode without agent, graph or animation controls', async () => {
+  const { Editor } = await server.ssrLoadModule('/src/components/editor/Editor.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const html = render(Editor, { initialProject: createProject({ name: 'Simple editor', typeId: 'archive', layoutId: 'editorial', fill: 'vide' }), github: { repos: [], status: 'snapshot' }, projectsCount: 1, onExit: noop, onSaved: noop, onDuplicate: noop });
+  assert.match(html, /Mise en page/);
+  assert.doesNotMatch(html, /Vue simple|Réglages avancés/);
+  assert.match(html, /Outils de l’atelier/);
+  assert.doesNotMatch(html, />Graphe<|> Graphe<|INSPECTEUR|Réactions locales/);
+  assert.match(html, /Ajouter/);
+});
+
+test('Document sections expose synchronized selection and insertion positions', async () => {
+  const { SectionCanvas } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject, makeTextFragment } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Plan test', typeId: 'archive', layoutId: 'editorial', fill: 'vide' });
+  project.cells = project.cells.slice(0,2);
+  const f = makeTextFragment({ title: 'Introduction test', body: 'Corps test' });
+  project.cells[0].fragmentId = f.id;
+  const props = { project, fragments: new Map([[f.id,f]]), selectedId: project.cells[0].id, onSelect: noop, onInsert: noop, onMove: noop, onSettings: noop, preview: false };
+  const html = render(SectionCanvas, props);
+  assert.match(html, /Plan de la présentation/);
+  assert.match(html, /aria-current="true"/);
+  assert.match(html, /Introduction test/);
+  for (const i of [1,2,3]) assert.ok(html.includes(`Ajouter une section à la position ${i}`));
+  const preview = render(SectionCanvas, { ...props, preview: true });
+  assert.doesNotMatch(preview, /Plan de la présentation|Ajouter ici|Modifier|Réglages de la sélection/);
+  assert.match(preview, /Corps test/);
+});
+
+test('Section ordering preserves content and obeys position locks', async () => {
+  const { moveSection } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Move', typeId: 'archive', fill: 'vide' });
+  const first = project.cells[0];
+  const moved = moveSection(project, first.id, 1);
+  assert.equal(moved.cells[1].id, first.id);
+  assert.equal(project.cells[0].id, first.id);
+  assert.equal(moveSection(project, first.id, -1), project);
+  project.cells[1].settings.locks.position = true;
+  assert.equal(moveSection(project, first.id, 1), project);
+});
+
+test('Preview supports grid and sequential slides without losing section content', async () => {
+  const { SectionCanvas } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Formats', typeId: 'archive', layoutId: 'slides', fill: 'vide' });
+  const props = { project, fragments: new Map(), selectedId: null, onSelect: noop, onInsert: noop, onMove: noop, onSettings: noop, preview: true };
+  assert.match(render(SectionCanvas, props), /Précédente/);
+  assert.match(render(SectionCanvas, { ...props, project: { ...project, layoutId: 'bento' } }), /md:grid-cols-2/);
+});
+
+test('Insertion creates an empty selected destination between the original sections', async () => {
+  const { insertDocumentSection } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const project = createProject({ name: 'Insert', typeId: 'archive', fill: 'vide' });
+  const before = project.cells.map(c => c.id);
+  const next = insertDocumentSection(project, 1, 'inserted-section');
+  assert.deepEqual(next.cells.map(c => c.id), [before[0], 'inserted-section', ...before.slice(1)]);
+  assert.equal(next.cells[1].fragmentId, null);
+  assert.equal(project.cells.length + 1, next.cells.length);
+  assert.deepEqual(project.cells.map(c => c.id), before);
+});
+
+
+test('Unified panel switches between plan and the existing library without a second editor', async () => {
+  const { SectionCanvas } = await server.ssrLoadModule('/src/components/editor/SectionCanvas.tsx');
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const props = { project: createProject({ name: 'Unified', typeId: 'archive', fill: 'vide' }), fragments: new Map(), selectedId: null, onSelect: noop, onInsert: noop, onMove: noop, onSettings: noop, preview: false, library: createElement('div', {}, 'LIBRARY_CONTENT'), onLibraryChange: noop };
+  const plan = render(SectionCanvas, props);
+  assert.match(plan, /Panneau de l’atelier/);
+  assert.match(plan, /Plan de la présentation/);
+  assert.doesNotMatch(plan, /LIBRARY_CONTENT/);
+  const library = render(SectionCanvas, { ...props, libraryOpen: true });
+  assert.match(library, /LIBRARY_CONTENT/);
+  assert.doesNotMatch(library, /Plan de la présentation/);
+});
+
+test('Local media survive database reopening and identical files deduplicate', async () => {
+  const { indexedDB } = await import('fake-indexeddb'); globalThis.indexedDB = indexedDB;
+  const lib = await server.ssrLoadModule('/src/data/mediaLibrary.ts');
+  const file = new File(['pixels'], 'photo.png', { type: 'image/png' });
+  const first = await lib.importLocalMedia(file);
+  await lib.importLocalMedia(file);
+  const loaded = await lib.loadLibraryMedia();
+  assert.equal(loaded.length, 1);
+  assert.equal(loaded[0].id, first.id);
+  assert.equal(await loaded[0].blob.text(), 'pixels');
+  await assert.rejects(() => lib.importLocalMedia(new File(['x'], 'script.js')), /format/);
+  assert.equal(lib.mediaKind('path/track.MP3'), 'audio');
+});
+
+test('GitHub indexing records pinned media URLs, provenance and truncation without secrets', async () => {
+  const lib = await server.ssrLoadModule('/src/data/mediaLibrary.ts');
+  const original = globalThis.fetch; const calls = [];
+  globalThis.fetch = async url => { calls.push(url); return { ok: true, json: async () => calls.length === 1 ? { default_branch: 'main' } : { sha: 'abc123', truncated: true, tree: [{type:'blob',path:'public/photo space.png',size:10},{type:'blob',path:'src/code.ts'},{type:'blob',path:'node_modules/demo.jpg'}] } }; };
+  try {
+    const result = await lib.indexGithubMedia('owner','repo');
+    assert.equal(result.items.length, 1);
+    assert.equal(result.truncated, true);
+    assert.match(result.items[0].url, /abc123\/public\/photo%20space.png/);
+    assert.match(result.items[0].origin, /owner\/repo/);
+  } finally { globalThis.fetch = original; }
+});
+
+test('Visual library offers multiple imports, source/type filters and deliberate insertion', async () => {
+  const { VisualMediaLibrary } = await server.ssrLoadModule('/src/components/editor/VisualMediaLibrary.tsx');
+  const html = render(VisualMediaLibrary, { repoNames: ['repo'], onInsert: noop });
+  assert.match(html, /multiple/);
+  assert.match(html, /Source des médias/);
+  assert.match(html, /Type de média/);
+  assert.match(html, /Indexer/);
+  assert.match(html, /Aucun accès automatique/);
+});
+
+test('Embedded audio inserted from local media passes backup and reload validation', async () => {
+  const { createProject } = await server.ssrLoadModule('/src/data/templates.ts');
+  const { isProject, parseBackup, exportBackup } = await server.ssrLoadModule('/src/data/projectBackup.ts');
+  const p = createProject({name:'Audio',typeId:'archive',fill:'vide'});
+  p.customFragments = [{id:'audio-local',kind:'audio',source:'upload',subtitle:'Mon ordinateur',name:'track.mp3',url:'data:audio/mpeg;base64,dGVzdA=='}];
+  assert.equal(isProject(p), true);
+  assert.equal(parseBackup(exportBackup([p]))[0].customFragments[0].url, p.customFragments[0].url);
+});
+
+test('Public portfolio describes all public nonempty projects without exposing local compositions', async () => {
+  const { PublicPortfolio } = await server.ssrLoadModule('/src/components/portfolio/PublicPortfolio.tsx');
+  const { PORTFOLIO_PROJECTS } = await server.ssrLoadModule('/src/data/portfolio.ts');
+  const { REPO_SNAPSHOT } = await server.ssrLoadModule('/src/data/repos.ts');
+  assert.equal(PORTFOLIO_PROJECTS.length, REPO_SNAPSHOT.filter(r => r.size > 0).length);
+  assert.ok(PORTFOLIO_PROJECTS.every(p => p.concept.length > 20));
+  const original = globalThis.localStorage;
+  globalThis.localStorage = { getItem: () => { throw new Error('No private storage should be read'); } };
+  try {
+    const html = render(PublicPortfolio);
+    assert.match(html, /folio-mosaic/);
+    assert.match(html, /Projets &amp; explorations/);
+    assert.match(html, /RELIA/);
+    assert.match(html, /height:100dvh;overflow-y:auto/);
+    assert.match(html, /Affichage des projets/);
+    assert.match(html, /Mosaïque/);
+    assert.match(html, /Liste/);
+    assert.match(html, /<dialog/);
+    assert.match(html, /Rechercher un projet/);
+    assert.doesNotMatch(html, /Restaurer une sauvegarde|Mon ordinateur|type="file"|github\.com|Sources ↗|Atelier ↗/);
+  } finally { globalThis.localStorage = original; }
+});
+
+test('Public portfolio route has explicit SPA rewrites and preserves security headers', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.equal(config.rewrites.find(r => r.source === '/portfolio').destination, '/index.html');
+  assert.equal(config.rewrites.find(r => r.source === '/portfolio/').destination, '/index.html');
+  assert.ok(config.headers[0].headers.some(h => h.key === 'X-Content-Type-Options'));
+  assert.equal(config.headers[0].rewrites, undefined);
+  assert.equal(config.rewrites.find(r => r.source === '/admin').destination, '/api/admin');
+});
+
+test('Portfolio owns its scroll instead of relying on the locked workspace body', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const css = await readFile(new URL('../src/components/portfolio/portfolio.css', import.meta.url), 'utf8');
+  assert.match(css, /repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.folio-dialog::backdrop/);
+  const { PublicPortfolio } = await server.ssrLoadModule('/src/components/portfolio/PublicPortfolio.tsx');
+  const html = render(PublicPortfolio);
+  assert.match(html, /height:100dvh;overflow-y:auto/);
+  assert.match(html, /Découvrir le concept de RELIA/);
+});
+
+test('About page uses confirmed Lille identity and founder title without homonym claims', async () => {
+  const { AboutPage } = await server.ssrLoadModule('/src/components/portfolio/AboutPage.tsx');
+  const html = render(AboutPage);
+  assert.match(html, /Matthieu Lecointre/);
+  assert.match(html, /Lille, Nord/);
+  assert.match(html, /Fondateur d’AIME/);
+  assert.match(html, /Musicien, designer, créateur de liens/);
+  assert.match(html, /graphisme et la direction artistique/);
+  assert.doesNotMatch(html, /Angers|PANORAMA|industrie|Saint-Luc|Zankyou|github\.com|href="\/admin"/i);
+  assert.match(html, /height:100dvh;overflow-y:auto/);
+  for (const name of ['POINTZERO','RELIA','NOEMA']) assert.ok(html.includes(name));
+});
+
+test('About page routing is public and does not bypass protected admin', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.equal(config.rewrites.find(r => r.source === '/a-propos').destination, '/index.html');
+  assert.equal(config.rewrites.find(r => r.source === '/admin').destination, '/api/admin');
+  const { PublicPortfolio } = await server.ssrLoadModule('/src/components/portfolio/PublicPortfolio.tsx');
+  assert.match(render(PublicPortfolio), /href="\/a-propos"/);
+});
+
+
+test('Research timeline separates explicit document dates from undated threads', async () => {
+  const { RESEARCH_TRACES, RESEARCH_THREADS } = await server.ssrLoadModule('/src/data/researchTimeline.ts');
+  assert.deepEqual(RESEARCH_TRACES.map(t => t.date), ['2026-10-08','2026-10-15']);
+  assert.ok(RESEARCH_TRACES.every(t => t.source.revision.length === 40));
+  assert.ok(RESEARCH_THREADS.every(t => !('date' in t) && t.source.path));
+  const { AboutPage } = await server.ssrLoadModule('/src/components/portfolio/AboutPage.tsx');
+  const html = render(AboutPage);
+  assert.match(html, /dateTime="2026-10-08"/i);
+  assert.match(html, /pas les dates de naissance des idées/);
+  assert.match(html, /sans leur attribuer un ordre chronologique/);
+  assert.doesNotMatch(html, /La démarche, en projets|Saint-Luc|2023|2024|2025|href="https:\/\/github/);
 });

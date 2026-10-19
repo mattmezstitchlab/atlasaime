@@ -15,7 +15,7 @@ function settings(x: unknown): boolean {
     ['aucune','fade','slide','zoom'].includes(String(x.animation)) && ['aucun','zoom','lift'].includes(String(x.hover)) &&
     object(x.locks) && ['position','size','content','crop','interaction'].every(k => typeof (x.locks as Record<string, unknown>)[k] === 'boolean');
 }
-const safeUrl = (x: unknown) => x === undefined || (typeof x === 'string' && /^(https?:|blob:|data:(image\/|video\/|application\/pdf[;,]))/i.test(x));
+const safeUrl = (x: unknown) => x === undefined || (typeof x === 'string' && /^(https?:|blob:|data:(image\/|video\/|audio\/|application\/pdf[;,]))/i.test(x));
 export function isProject(value: unknown): value is Project {
   if (!object(value)) return false;
   const p = value;
