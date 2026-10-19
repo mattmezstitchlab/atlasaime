@@ -407,3 +407,25 @@ test('Portfolio owns its scroll instead of relying on the locked workspace body'
   assert.match(html, /height:100dvh;overflow-y:auto/);
   assert.match(html, /Découvrir le concept de RELIA/);
 });
+
+test('About page uses confirmed Lille identity and founder title without homonym claims', async () => {
+  const { AboutPage } = await server.ssrLoadModule('/src/components/portfolio/AboutPage.tsx');
+  const html = render(AboutPage);
+  assert.match(html, /Matthieu Lecointre/);
+  assert.match(html, /Lille, Nord/);
+  assert.match(html, /Fondateur d’AIME/);
+  assert.match(html, /Musicien, designer, créateur de liens/);
+  assert.match(html, /graphisme et la direction artistique/);
+  assert.doesNotMatch(html, /Angers|PANORAMA|industrie|Saint-Luc|Zankyou|github\.com|href="\/admin"/i);
+  assert.match(html, /height:100dvh;overflow-y:auto/);
+  for (const name of ['POINTZERO','RELIA','SILLAGE']) assert.ok(html.includes(name));
+});
+
+test('About page routing is public and does not bypass protected admin', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.equal(config.rewrites.find(r => r.source === '/a-propos').destination, '/index.html');
+  assert.equal(config.rewrites.find(r => r.source === '/admin').destination, '/api/admin');
+  const { PublicPortfolio } = await server.ssrLoadModule('/src/components/portfolio/PublicPortfolio.tsx');
+  assert.match(render(PublicPortfolio), /href="\/a-propos"/);
+});

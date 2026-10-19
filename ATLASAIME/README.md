@@ -174,3 +174,9 @@ Les anciennes compositions et IndexedDB restent sur la même origine, sans migra
 ### Tests et développement
 
 Exécuter `node --test tests/*.test.mjs`, TypeScript, puis `npm run build`. `npm run dev` est un serveur de développement local, **pas** une protection d’accès : ne pas le rendre public. Les routes serveur nécessitent l’environnement de fonctions Vercel ; `npm run preview` sert seulement le portfolio statique. Valider le déploiement réel avant fusion : `/` et `/portfolio`, accès direct anonyme `/admin` et `/api/admin`, refus sans secrets, connexion, déconnexion, expiration, absence de `/admin.html` public et absence de cache privé. Pas de test navigateur ni audit de sécurité externe effectué.
+
+## Page À propos
+
+`/a-propos` présente Matthieu Lecointre / Matt Mez, Lille (Nord), avec le titre personnellement confirmé « Fondateur d’AIME — Musicien, designer, créateur de liens ». Le parcours musique/graphisme/direction artistique est étayé par l’article La Voix du Nord du 6 mars 2021 (identité artistique et saxophone événementiel) et le profil public professionnel Matthieu Lecointre associé à Matt Mez Sax (double pratique graphique et musicale). Aucun élément de l’homonyme d’Angers n’est utilisé. Les dates, diplômes, récompenses, structures juridiques et clients non confirmés sont exclus.
+
+Texte éditorial prudent autour des pratiques et des concepts AIME, avec POINTZERO, RELIA et SILLAGE pour illustrations. Pas de portrait emprunté, pas de coordonnées ajoutées, pas de liens GitHub/administration. Le titre de fondateur est une déclaration validée par l’intéressé, pas une vérification de statut juridique. Les intentions formulées restent ajustables avant publication. La page possède son défilement et réutilise l’identité visuelle du portfolio ; lien public depuis la navigation et la section À propos. Aucun changement de l’authentification ni des secrets.

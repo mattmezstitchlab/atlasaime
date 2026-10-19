@@ -19,6 +19,14 @@
     {
       "source": "/portfolio/",
       "destination": "/index.html"
+    },
+    {
+      "source": "/a-propos",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/a-propos/",
+      "destination": "/index.html"
     }
   ],
   "headers": [
